@@ -1,0 +1,38 @@
+{
+  "name": "kanle-cf-mini",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "npm run build && vite preview",
+    "deploy": "npm run build && wrangler deploy",
+    "db:migrate": "wrangler d1 migrations apply kanle-mini --local",
+    "db:migrate:remote": "wrangler d1 migrations apply kanle-mini --remote",
+    "cf-typegen": "wrangler types"
+  },
+  "dependencies": {
+    "blueimp-md5": "^2.19.0",
+    "hono": "^4.13.2",
+    "lucide-react": "^1.31.0",
+    "marked": "^18.0.9",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-router-dom": "^7.18.2"
+  },
+  "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.52.0",
+    "@cloudflare/workers-types": "^5.20260813.1",
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/blueimp-md5": "^2.18.2",
+    "@types/node": "^26.2.0",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "@vitejs/plugin-react": "^6.0.5",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^7.0.2",
+    "vite": "^8.2.1",
+    "wrangler": "^4.122.0"
+  }
+}

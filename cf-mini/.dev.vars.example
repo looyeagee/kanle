@@ -1,0 +1,5 @@
+JWT_SECRET=dev-secret-change-me
+ADMIN_BOOTSTRAP_PASSWORD=admin123
+# 生产环境填 R2 公开域名，例如 https://pub-xxxxx.r2.dev
+# 留空则通过 Worker /api/media/* 回源（本地开发推荐）
+R2_PUBLIC_BASE=

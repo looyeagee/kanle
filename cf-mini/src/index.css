@@ -1,0 +1,170 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --wechat-bg: #f5f5f5;
+  --wechat-white: #ffffff;
+  --wechat-text: #1a1a1a;
+  --wechat-nickname: #576b95;
+  --wechat-time: #b2b2b2;
+  --wechat-bubble: #f7f7f7;
+  --wechat-divider: #f5f5f5;
+  --wechat-link: #576b95;
+  --wechat-surface: #ededed;
+  --wechat-border: #e5e5e5;
+  --wechat-hover: #f0f0f0;
+  --adm-bg: #f3f4f6;
+  --adm-card: #ffffff;
+  --adm-text: #111827;
+  --adm-text-secondary: #6b7280;
+  --adm-border: #e5e7eb;
+  --adm-input: #f9fafb;
+  --adm-primary: #374151;
+  --adm-primary-text: #ffffff;
+  --adm-danger: #ef4444;
+  --single-img-max: 280px;
+  --single-img-height: 240px;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --single-img-max: 320px;
+    --single-img-height: 280px;
+  }
+}
+
+.dark {
+  --wechat-bg: #18181c;
+  --wechat-white: #232328;
+  --wechat-text: #e0e0e0;
+  --wechat-nickname: #7d8fc4;
+  --wechat-time: #888888;
+  --wechat-bubble: #2a2a30;
+  --wechat-divider: #333338;
+  --wechat-link: #7d8fc4;
+  --wechat-surface: #2a2a30;
+  --wechat-border: #333338;
+  --wechat-hover: #333338;
+  --adm-bg: #111827;
+  --adm-card: #1f2937;
+  --adm-text: #f9fafb;
+  --adm-text-secondary: #d1d5db;
+  --adm-border: #374151;
+  --adm-input: #374151;
+  --adm-primary: #f3f4f6;
+  --adm-primary-text: #111827;
+  --adm-danger: #f87171;
+}
+
+@theme inline {
+  --color-wechat-bg: var(--wechat-bg);
+  --color-wechat-white: var(--wechat-white);
+  --color-wechat-text: var(--wechat-text);
+  --color-wechat-nickname: var(--wechat-nickname);
+  --color-wechat-time: var(--wechat-time);
+  --color-wechat-bubble: var(--wechat-bubble);
+  --color-wechat-divider: var(--wechat-divider);
+  --color-wechat-link: var(--wechat-link);
+  --color-wechat-surface: var(--wechat-surface);
+  --color-wechat-border: var(--wechat-border);
+  --color-wechat-hover: var(--wechat-hover);
+  --color-adm-bg: var(--adm-bg);
+  --color-adm-card: var(--adm-card);
+  --color-adm-text: var(--adm-text);
+  --color-adm-text-secondary: var(--adm-text-secondary);
+  --color-adm-border: var(--adm-border);
+  --color-adm-input: var(--adm-input);
+  --color-adm-primary: var(--adm-primary);
+  --color-adm-primary-text: var(--adm-primary-text);
+  --color-adm-danger: var(--adm-danger);
+  --font-sans: -apple-system, BlinkMacSystemFont, "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--wechat-bg);
+  color: var(--wechat-text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-up {
+  animation: fade-in-up 0.45s ease forwards;
+}
+
+@keyframes pop-in {
+  from { opacity: 0; transform: scaleX(0.6); }
+  to { opacity: 1; transform: scaleX(1); }
+}
+.animate-pop-in {
+  animation: pop-in 0.18s ease-out forwards;
+}
+
+@keyframes pop-out {
+  from { opacity: 1; transform: scaleX(1); }
+  to { opacity: 0; transform: scaleX(0.6); }
+}
+.animate-pop-out {
+  animation: pop-out 0.16s ease-in forwards;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+.animate-float { animation: float 6s ease-in-out infinite; }
+.animate-float-delayed { animation: float 7s ease-in-out 1s infinite; }
+.animate-float-slow { animation: float 9s ease-in-out infinite; }
+
+.rich-content h1 { font-size: 1.4em; font-weight: 600; margin: 0.8em 0 0.4em; }
+.rich-content h2 { font-size: 1.25em; font-weight: 600; margin: 0.8em 0 0.4em; }
+.rich-content h3 { font-size: 1.1em; font-weight: 600; margin: 0.7em 0 0.3em; }
+.rich-content p { margin: 0.6em 0; }
+.rich-content ul, .rich-content ol { margin: 0.5em 0 0.5em 1.2em; }
+.rich-content li { margin: 0.2em 0; }
+.rich-content a { color: var(--wechat-link); }
+.rich-content img { max-width: 100%; border-radius: 6px; }
+.rich-content pre {
+  overflow-x: auto;
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--wechat-bubble);
+  font-size: 13px;
+}
+.rich-content code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.9em;
+}
+.rich-content blockquote {
+  border-left: 3px solid var(--wechat-border);
+  padding-left: 12px;
+  color: var(--wechat-time);
+}
+.rich-content.collapsed {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.cover-fallback {
+  background:
+    radial-gradient(circle at 20% 20%, #8aa4d4 0%, transparent 40%),
+    radial-gradient(circle at 80% 0%, #c9b8a8 0%, transparent 35%),
+    linear-gradient(160deg, #4a5d7a 0%, #2f3b4d 100%);
+}
