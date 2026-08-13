@@ -1,10 +1,12 @@
 export default function LiveBadge({
   hidden = false,
   className = "",
+  label = "实况",
   onClick,
 }: {
   hidden?: boolean;
   className?: string;
+  label?: string;
   onClick?: () => void;
 }) {
   return (
@@ -41,7 +43,7 @@ export default function LiveBadge({
         <path d="M8.1 20.11l0 .01" />
         <path d="M12 21l0 .01" />
       </svg>
-      实况
+      {label}
     </button>
   );
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { ChevronLeft, ChevronRight, Volume2, VolumeX, X } from "lucide-react";
 import type { PostImage } from "@/lib/types";
@@ -15,10 +15,23 @@ interface ImageViewerProps {
 export default function ImageViewer({ images, initialIndex, onClose }: ImageViewerProps) {
   const [index, setIndex] = useState(initialIndex);
   const [playLive, setPlayLive] = useState(true);
+  const [videoReady, setVideoReady] = useState(false);
   const [muted, setMuted] = useState(true);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const current = images[index];
   const src = getImageSrc(current);
   const video = getVideoSrc(current);
+  const loadingLive = !!video && playLive && !videoReady;
+
+  const startLive = useCallback(() => {
+    setVideoReady(false);
+    setPlayLive(true);
+  }, []);
+
+  const stopLive = useCallback(() => {
+    setVideoReady(false);
+    setPlayLive(false);
+  }, []);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -36,7 +49,29 @@ export default function ImageViewer({ images, initialIndex, onClose }: ImageView
 
   useEffect(() => {
     setPlayLive(!!video);
+    setVideoReady(false);
   }, [index, video]);
+
+  useEffect(() => {
+    if (!playLive || !videoRef.current) return;
+    const el = videoRef.current;
+    el.currentTime = 0;
+    el.muted = muted;
+    el.play().catch(() => {
+      el.muted = true;
+      setMuted(true);
+      el.play().catch(() => {});
+    });
+  }, [playLive, index]);
+
+  useEffect(() => {
+    if (!playLive || !video) return;
+    const ua = navigator.userAgent;
+    if (/iphone/i.test(ua) && /micromessenger/i.test(ua)) {
+      const timer = setTimeout(() => setVideoReady(true), 600);
+      return () => clearTimeout(timer);
+    }
+  }, [playLive, index, video]);
 
   return createPortal(
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/92" onClick={onClose}>
@@ -65,24 +100,45 @@ export default function ImageViewer({ images, initialIndex, onClose }: ImageView
         className="relative max-h-[90vh] max-w-[92vw]"
         onClick={(e) => {
           e.stopPropagation();
-          if (video && !playLive) setPlayLive(true);
+          if (video && !playLive) startLive();
         }}
       >
-        {playLive && video ? (
-          <video src={video} autoPlay playsInline muted={muted} controls={false} className="max-h-[90vh] max-w-[92vw] object-contain" onEnded={() => setPlayLive(false)} />
-        ) : (
-          <img src={src} alt="" className={`max-h-[90vh] max-w-[92vw] object-contain ${video ? "cursor-pointer" : ""}`} />
-        )}
-        {video && (
-          <LiveBadge
-            hidden={playLive}
-            className="left-3 top-3 px-3 py-1.5 text-xs"
-            onClick={() => {
-              if (!playLive) setPlayLive(true);
-            }}
+        <img
+          src={src}
+          alt=""
+          className={`max-h-[90vh] max-w-[92vw] object-contain transition-opacity duration-300 ${
+            playLive && videoReady ? "opacity-0" : "opacity-100"
+          } ${video ? "cursor-pointer" : ""}`}
+        />
+        {playLive && video && (
+          <video
+            ref={videoRef}
+            key={video}
+            src={video}
+            playsInline
+            muted={muted}
+            preload="auto"
+            controls={false}
+            className={`absolute inset-0 h-full w-full object-contain transition-opacity duration-300 ${
+              videoReady ? "opacity-100" : "opacity-0 pointer-events-none"
+            }`}
+            onCanPlay={() => setVideoReady(true)}
+            onPlaying={() => setVideoReady(true)}
+            onEnded={stopLive}
           />
         )}
         {video && (
+          <LiveBadge
+            hidden={playLive && videoReady}
+            label={loadingLive ? "实况加载中" : "实况"}
+            className="left-3 top-3 px-3 py-1.5 text-xs"
+            onClick={() => {
+              if (playLive) stopLive();
+              else startLive();
+            }}
+          />
+        )}
+        {video && playLive && videoReady && (
           <button
             type="button"
             onClick={() => setMuted((m) => !m)}
