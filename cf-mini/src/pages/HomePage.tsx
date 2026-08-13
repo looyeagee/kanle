@@ -8,29 +8,31 @@ import FloatingActions from "@/components/FloatingActions";
 import MomentEditor from "@/components/MomentEditor";
 import { api } from "@/lib/api";
 import { getAdmin } from "@/lib/auth";
+import { setDocumentTitle, siteTitleOf } from "@/lib/title";
 import type { Post, User } from "@/lib/types";
 
 export default function HomePage() {
   const [owner, setOwner] = useState<User>({
     id: "owner",
-    nickname: "看了",
+    nickname: "",
     avatar: "",
     cover: "",
     bio: "",
   });
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [hasMore, setHasMore] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(true);
   const [editing, setEditing] = useState<Post | null>(null);
 
   useEffect(() => {
-    api<User>("/profile").then((p) => setOwner({ ...p, id: "owner" })).catch(() => {});
-    api<{ data: Post[]; pagination: { hasMore: boolean } }>("/posts?page=1&limit=10")
-      .then((json) => {
-        setPosts(json.data);
-        setHasMore(json.pagination.hasMore);
-      })
-      .catch(() => {});
+    api<User>("/profile")
+      .then((p) => setOwner({ ...p, id: "owner" }))
+      .catch(() => {})
+      .finally(() => setProfileLoading(false));
   }, []);
+
+  useEffect(() => {
+    if (profileLoading) return;
+    setDocumentTitle(siteTitleOf(owner));
+  }, [owner, profileLoading]);
 
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-wechat-white md:bg-wechat-bg">
@@ -42,13 +44,23 @@ export default function HomePage() {
         >
           <main className="relative w-full bg-wechat-white pb-8 md:pb-12">
             <TopBar />
-            <CoverHeader user={owner} />
+            <CoverHeader user={owner} loading={profileLoading} />
             <PostList
-              initialPosts={posts}
-              initialHasMore={hasMore}
+              initialPosts={[]}
+              initialHasMore={false}
               onEdit={getAdmin() ? (p) => setEditing(p) : undefined}
             />
-            <footer className="px-6 py-8 text-center text-xs text-wechat-time">看了 · Cloudflare 缩小版</footer>
+            <footer className="px-6 py-8 text-center text-xs text-wechat-time">
+              powered by{" "}
+              <a
+                href="https://github.com/zilinnb/kanle"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-wechat-nickname hover:opacity-70"
+              >
+                zilinnb/kanle
+              </a>
+            </footer>
           </main>
         </div>
         <ArticleListSidebar />

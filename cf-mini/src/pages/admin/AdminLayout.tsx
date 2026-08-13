@@ -24,6 +24,7 @@ export default function AdminLayout() {
             <Link to="/" className="mr-2 text-sm text-adm-text-secondary">← 首页</Link>
             {item("/admin/moments", "动态")}
             {item("/admin/articles", "文章")}
+            {item("/admin/settings", "资料")}
           </div>
           <button
             type="button"

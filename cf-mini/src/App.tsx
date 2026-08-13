@@ -6,6 +6,7 @@ import AdminLayout from "@/pages/admin/AdminLayout";
 import MomentsPage from "@/pages/admin/MomentsPage";
 import ArticlesPage from "@/pages/admin/ArticlesPage";
 import ArticleEditorPage from "@/pages/admin/ArticleEditorPage";
+import SettingsPage from "@/pages/admin/SettingsPage";
 
 export default function App() {
   return (
@@ -20,6 +21,7 @@ export default function App() {
           <Route path="articles" element={<ArticlesPage />} />
           <Route path="articles/new" element={<ArticleEditorPage />} />
           <Route path="articles/:id" element={<ArticleEditorPage />} />
+          <Route path="settings" element={<SettingsPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

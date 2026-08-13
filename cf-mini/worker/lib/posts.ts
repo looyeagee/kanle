@@ -12,6 +12,7 @@ export type Profile = {
   cover: string;
   bio: string;
   email: string;
+  siteTitle: string;
 };
 
 export type PostRow = {
@@ -115,17 +116,24 @@ export function mapPost(
 
 export async function getProfile(db: D1Database): Promise<Profile> {
   const row = await db
-    .prepare("SELECT nickname, avatar, cover, bio, email FROM site_profile LIMIT 1")
-    .first<Profile>();
-  return (
-    row || {
-      nickname: "看了",
-      avatar: "",
-      cover: "",
-      bio: "",
-      email: "",
-    }
-  );
+    .prepare("SELECT nickname, avatar, cover, bio, email, site_title FROM site_profile LIMIT 1")
+    .first<{
+      nickname: string;
+      avatar: string;
+      cover: string;
+      bio: string;
+      email: string;
+      site_title: string;
+    }>();
+  const nickname = row?.nickname || "看了";
+  return {
+    nickname,
+    avatar: row?.avatar || "",
+    cover: row?.cover || "",
+    bio: row?.bio || "",
+    email: row?.email || "",
+    siteTitle: (row?.site_title || "").trim() || nickname,
+  };
 }
 
 function toIso(value: string): string {

@@ -5,6 +5,25 @@ import PostCard from "./PostCard";
 
 const PAGE_SIZE = 10;
 
+function FeedSkeleton() {
+  return (
+    <div className="divide-y divide-wechat-divider">
+      {[0, 1, 2].map((i) => (
+        <div key={i} className="flex gap-3 px-4 py-4 sm:px-5 md:px-6">
+          <div className="h-10 w-10 shrink-0 animate-pulse rounded-[5px] bg-wechat-bubble md:h-11 md:w-11" />
+          <div className="min-w-0 flex-1 space-y-2 pt-0.5">
+            <div className="h-4 w-20 animate-pulse rounded bg-wechat-bubble" />
+            <div className="h-3.5 w-full animate-pulse rounded bg-wechat-bubble" />
+            <div className="h-3.5 w-2/3 animate-pulse rounded bg-wechat-bubble" />
+            <div className="mt-2 h-[88px] w-[140px] animate-pulse rounded bg-wechat-bubble" />
+            <div className="h-3 w-16 animate-pulse rounded bg-wechat-bubble" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function PostList({
   initialPosts,
   initialHasMore,
@@ -18,6 +37,7 @@ export default function PostList({
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(initialHasMore);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [booting, setBooting] = useState(true);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   const refresh = useCallback(async () => {
@@ -28,7 +48,9 @@ export default function PostList({
   }, []);
 
   useEffect(() => {
-    refresh().catch(() => {});
+    refresh()
+      .catch(() => {})
+      .finally(() => setBooting(false));
     const onPublished = () => refresh().catch(() => {});
     window.addEventListener("post-published", onPublished);
     return () => window.removeEventListener("post-published", onPublished);
@@ -63,6 +85,8 @@ export default function PostList({
     await api(`/posts/${id}`, { method: "DELETE" });
     setPosts((prev) => prev.filter((p) => p.id !== id));
   };
+
+  if (booting) return <FeedSkeleton />;
 
   return (
     <div className="divide-y divide-wechat-divider">

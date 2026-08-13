@@ -11,7 +11,8 @@ import { api } from "@/lib/api";
 import { getVisitorName } from "@/lib/auth";
 import { renderMarkdown } from "@/lib/markdown";
 import { formatRelativeTime } from "@/lib/time";
-import type { Comment, Post } from "@/lib/types";
+import { setDocumentTitle, siteTitleOf } from "@/lib/title";
+import type { Comment, Post, User } from "@/lib/types";
 
 export default function ArticlePage() {
   const { id } = useParams();
@@ -22,6 +23,13 @@ export default function ArticlePage() {
   const [comments, setComments] = useState<Comment[]>([]);
   const [showComments, setShowComments] = useState(true);
   const [replyTo, setReplyTo] = useState<string | undefined>();
+  const [siteTitle, setSiteTitle] = useState("看了");
+
+  useEffect(() => {
+    api<User>("/profile")
+      .then((p) => setSiteTitle(siteTitleOf(p)))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (!id) return;
@@ -34,6 +42,14 @@ export default function ArticlePage() {
       })
       .catch((e) => setError(e instanceof Error ? e.message : "加载失败"));
   }, [id]);
+
+  useEffect(() => {
+    if (post) {
+      setDocumentTitle(`${post.title || "文章"} - ${siteTitle}`);
+    } else {
+      setDocumentTitle(siteTitle);
+    }
+  }, [post, siteTitle]);
 
   if (error) {
     return <div className="p-10 text-center text-wechat-time">{error}</div>;

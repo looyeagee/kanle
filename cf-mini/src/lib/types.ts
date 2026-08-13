@@ -13,6 +13,7 @@ export type User = {
   cover: string;
   bio: string;
   email?: string;
+  siteTitle?: string;
 };
 
 export type Comment = {

@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { getCookie, setCookie } from "hono/cookie";
 import { sign, verify } from "hono/jwt";
 import { ensureDefaultAdmin, type AdminJwt } from "./lib/auth";
-import { verifyPassword } from "./lib/crypto";
+import { hashPassword, verifyPassword } from "./lib/crypto";
 import { buildObjectKey, extFromName, publicMediaUrl } from "./lib/media";
 import { extractMotionPhoto } from "./lib/motion-photo";
 import {
@@ -66,12 +66,25 @@ app.get("/api/profile", async (c) => {
 app.put("/api/profile", async (c) => {
   const admin = await getAdminFromRequest(c);
   if (!admin) return c.json({ message: "未登录" }, 401);
-  const body = await c.req.json<{ nickname?: string; avatar?: string; cover?: string; bio?: string }>();
-  await c.env.DB.prepare(
-    "UPDATE site_profile SET nickname = ?, avatar = ?, cover = ?, bio = ? WHERE id = 'default'"
-  )
-    .bind(body.nickname ?? "", body.avatar ?? "", body.cover ?? "", body.bio ?? "")
-    .run();
+  const current = await getProfile(c.env.DB);
+  const body = await c.req.json<{
+    nickname?: string;
+    avatar?: string;
+    cover?: string;
+    bio?: string;
+    siteTitle?: string;
+  }>();
+  const nickname = (body.nickname ?? current.nickname).trim() || current.nickname;
+  const avatar = body.avatar ?? current.avatar;
+  const cover = body.cover ?? current.cover;
+  const bio = body.bio ?? current.bio;
+  const siteTitle = (body.siteTitle ?? current.siteTitle).trim() || nickname;
+  await c.env.DB.batch([
+    c.env.DB.prepare(
+      "UPDATE site_profile SET nickname = ?, avatar = ?, cover = ?, bio = ?, site_title = ? WHERE id = 'default'"
+    ).bind(nickname, avatar, cover, bio, siteTitle),
+    c.env.DB.prepare("UPDATE admins SET nickname = ? WHERE id = ?").bind(nickname, admin.sub),
+  ]);
   return c.json(await getProfile(c.env.DB));
 });
 
@@ -109,6 +122,25 @@ app.get("/api/auth/me", async (c) => {
   const admin = await getAdminFromRequest(c);
   if (!admin) return c.json({ message: "未登录" }, 401);
   return c.json(admin);
+});
+
+app.post("/api/auth/password", async (c) => {
+  const session = await getAdminFromRequest(c);
+  if (!session) return c.json({ message: "未登录" }, 401);
+  const body = await c.req.json<{ currentPassword?: string; newPassword?: string }>();
+  const currentPassword = body.currentPassword || "";
+  const newPassword = body.newPassword || "";
+  if (!currentPassword || !newPassword) return c.json({ message: "请填写当前密码和新密码" }, 400);
+  if (newPassword.length < 6) return c.json({ message: "新密码至少 6 位" }, 400);
+  const admin = await c.env.DB.prepare("SELECT id, password_hash FROM admins WHERE id = ?")
+    .bind(session.sub)
+    .first<{ id: string; password_hash: string }>();
+  if (!admin || !(await verifyPassword(currentPassword, admin.password_hash))) {
+    return c.json({ message: "当前密码不正确" }, 400);
+  }
+  const hash = await hashPassword(newPassword);
+  await c.env.DB.prepare("UPDATE admins SET password_hash = ? WHERE id = ?").bind(hash, admin.id).run();
+  return c.json({ ok: true });
 });
 
 app.get("/api/posts", async (c) => {
