@@ -89,19 +89,21 @@ export default function PostList({
   if (booting) return <FeedSkeleton />;
 
   return (
-    <div className="divide-y divide-wechat-divider">
-      {posts.map((post, i) => (
-        <PostCard
-          key={post.id}
-          post={post}
-          index={i}
-          onDelete={onEdit ? () => handleDelete(post.id) : undefined}
-          onEdit={onEdit && post.type === "moment" ? () => onEdit(post) : undefined}
-        />
-      ))}
-      <div ref={sentinelRef} className="h-8" />
-      {loadingMore && <p className="py-4 text-center text-sm text-wechat-time">加载中...</p>}
-      {!hasMore && posts.length > 0 && <p className="py-6 text-center text-sm text-wechat-time">没有更多了</p>}
+    <div>
+      <div className="divide-y divide-wechat-divider">
+        {posts.map((post, i) => (
+          <PostCard
+            key={post.id}
+            post={post}
+            index={i}
+            onDelete={onEdit ? () => handleDelete(post.id) : undefined}
+            onEdit={onEdit && post.type === "moment" ? () => onEdit(post) : undefined}
+          />
+        ))}
+      </div>
+      {hasMore && <div ref={sentinelRef} className="h-8" />}
+      {loadingMore && <p className="py-3 text-center text-sm text-wechat-time">加载中...</p>}
+      {!hasMore && posts.length > 0 && <p className="py-3 text-center text-sm text-wechat-time">没有更多了</p>}
       {posts.length === 0 && <p className="py-12 text-center text-sm text-wechat-time">还没有内容</p>}
     </div>
   );

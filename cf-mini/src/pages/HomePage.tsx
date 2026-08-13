@@ -39,7 +39,7 @@ export default function HomePage() {
           id="scroll-root"
           className="md:fixed md:top-6 md:left-[calc(50%-300px)] md:z-10 md:h-[calc(100vh-48px)] md:w-[600px] md:overflow-y-auto md:rounded-2xl md:bg-wechat-white md:shadow-[0_8px_40px_-12px_rgba(0,0,0,0.12)] dark:md:shadow-[0_8px_40px_-12px_rgba(0,0,0,0.4)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
-          <main className="relative w-full bg-wechat-white pb-8 md:pb-12">
+          <main className="relative w-full bg-wechat-white pb-4 md:pb-6">
             <TopBar />
             <CoverHeader user={owner} loading={profileLoading} />
             <PostList
@@ -47,7 +47,7 @@ export default function HomePage() {
               initialHasMore={false}
               onEdit={getAdmin() ? (p) => setEditing(p) : undefined}
             />
-            <footer className="px-6 py-8 text-center text-xs text-wechat-time">
+            <footer className="px-6 py-3 text-center text-xs text-wechat-time">
               powered by{" "}
               <a
                 href="https://github.com/zilinnb/kanle"

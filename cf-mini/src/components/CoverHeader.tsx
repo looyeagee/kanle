@@ -83,9 +83,9 @@ export default function CoverHeader({ user, loading = false }: { user: User; loa
       <div className="mx-auto flex max-w-[600px] justify-end px-4 pb-2 pt-6 text-xs text-wechat-time sm:px-5 sm:pt-7 md:px-6 md:pb-3 md:pt-8">
         {loading ? (
           <span className="h-3 w-28 animate-pulse rounded bg-wechat-bubble" />
-        ) : (
+        ) : user.bio ? (
           <span className="max-w-[80%] truncate text-right">{user.bio}</span>
-        )}
+        ) : null}
       </div>
     </header>
   );

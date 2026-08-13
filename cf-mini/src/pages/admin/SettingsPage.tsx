@@ -8,6 +8,7 @@ export default function SettingsPage() {
   const [nickname, setNickname] = useState("");
   const [avatar, setAvatar] = useState("");
   const [cover, setCover] = useState("");
+  const [bio, setBio] = useState("");
   const [siteTitle, setSiteTitle] = useState("");
   const [email, setEmail] = useState("");
   const [saving, setSaving] = useState(false);
@@ -28,6 +29,7 @@ export default function SettingsPage() {
         setNickname(p.nickname || "");
         setAvatar(p.avatar || "");
         setCover(p.cover || "");
+        setBio(p.bio || "");
         setSiteTitle(p.siteTitle || p.nickname || "");
         setEmail(p.email || "");
       })
@@ -49,6 +51,7 @@ export default function SettingsPage() {
           nickname: nickname.trim(),
           avatar,
           cover,
+          bio: bio.trim(),
           siteTitle: siteTitle.trim(),
         }),
       });
@@ -57,6 +60,7 @@ export default function SettingsPage() {
       setNickname(profile.nickname);
       setAvatar(profile.avatar);
       setCover(profile.cover || "");
+      setBio(profile.bio || "");
       setSiteTitle(profile.siteTitle || profile.nickname);
       setOk("已保存");
     } catch (err) {
@@ -157,6 +161,18 @@ export default function SettingsPage() {
           onChange={(e) => setNickname(e.target.value)}
           className="mt-1 w-full rounded-xl border border-adm-border bg-adm-input px-3 py-2 outline-none"
         />
+      </label>
+      <label className="block text-sm">
+        个性签名
+        <input
+          value={bio}
+          onChange={(e) => setBio(e.target.value)}
+          placeholder="头像下方显示的文字，例如：记录日常的朋友圈"
+          className="mt-1 w-full rounded-xl border border-adm-border bg-adm-input px-3 py-2 outline-none"
+        />
+        <span className="mt-1 block text-xs text-adm-text-secondary">
+          显示在首页头像下方，留空则不展示
+        </span>
       </label>
       <label className="block text-sm">
         网页标题
