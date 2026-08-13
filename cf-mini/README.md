@@ -14,14 +14,14 @@ npm run dev
 
 默认后台：`admin@local` / `admin123`（可在 `.dev.vars` 改 `ADMIN_BOOTSTRAP_PASSWORD`）。
 
-未配置 `R2_PUBLIC_BASE` 时，媒体走 `/api/media/*` 回源，本地即可预览图片和视频。
+未配置 `R2_PUBLIC_BASE` 时，媒体走 `/api/media/*` 回源，本地即可预览图片和视频。生产建议给 R2 绑自定义域名（如 `https://media.example.com`），避免每张图都打 Worker。
 
 ## 上线
 
 1. 复制 `wrangler.jsonc.example` 为 `wrangler.jsonc`（此文件已 gitignore，不要提交）
 2. `npx wrangler d1 create kanle-mini`，把返回的 `database_id` 填进 `wrangler.jsonc`
 3. `npx wrangler r2 bucket create kanle-mini-media`
-4. 可选：打开 R2 公开访问，把域名写入 secret/var `R2_PUBLIC_BASE`（如 `https://pub-xxx.r2.dev`）
+4. 可选：给 R2 桶绑自定义域名，把 `R2_PUBLIC_BASE` 写成 `https://media.example.com`（本地 `.dev.vars` 留空，继续走 Worker 回源）
 5. `npx wrangler secret put JWT_SECRET`
 6. `npx wrangler d1 migrations apply kanle-mini --remote`
 7. `npm run deploy`

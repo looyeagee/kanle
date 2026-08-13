@@ -1,3 +1,5 @@
+import { rewriteMediaText, rewriteMediaUrl } from "./media";
+
 export type PostImage = string | { src: string; video?: string };
 
 export type PostVideo = {
@@ -81,23 +83,41 @@ export function mapComment(row: CommentRow) {
   };
 }
 
+function rewriteImage(env: Env, image: PostImage): PostImage {
+  if (typeof image === "string") return rewriteMediaUrl(env, image);
+  return {
+    src: rewriteMediaUrl(env, image.src),
+    video: image.video ? rewriteMediaUrl(env, image.video) : undefined,
+  };
+}
+
+function rewriteVideo(env: Env, video: PostVideo | null): PostVideo | null {
+  if (!video) return null;
+  return {
+    ...video,
+    url: rewriteMediaUrl(env, video.url),
+    cover: video.cover ? rewriteMediaUrl(env, video.cover) : undefined,
+  };
+}
+
 export function mapPost(
   row: PostRow,
   profile: Profile,
   likes: LikeRow[],
   comments: CommentRow[],
-  visitorId: string
+  visitorId: string,
+  env: Env
 ) {
   return {
     id: row.id,
     type: row.type,
     title: row.title,
     excerpt: row.excerpt,
-    cover: row.cover,
+    cover: rewriteMediaUrl(env, row.cover),
     category: row.category,
-    content: row.content,
-    images: parseImages(row.images_json),
-    video: parseVideo(row.video_json),
+    content: rewriteMediaText(env, row.content),
+    images: parseImages(row.images_json).map((image) => rewriteImage(env, image)),
+    video: rewriteVideo(env, parseVideo(row.video_json)),
     pinned: row.pinned === 1,
     createdAt: toIso(row.created_at),
     author: {
@@ -114,7 +134,7 @@ export function mapPost(
   };
 }
 
-export async function getProfile(db: D1Database): Promise<Profile> {
+export async function getProfile(db: D1Database, env: Env): Promise<Profile> {
   const row = await db
     .prepare("SELECT nickname, avatar, cover, bio, email, site_title FROM site_profile LIMIT 1")
     .first<{
@@ -128,8 +148,8 @@ export async function getProfile(db: D1Database): Promise<Profile> {
   const nickname = row?.nickname || "看了";
   return {
     nickname,
-    avatar: row?.avatar || "",
-    cover: row?.cover || "",
+    avatar: rewriteMediaUrl(env, row?.avatar || ""),
+    cover: rewriteMediaUrl(env, row?.cover || ""),
     bio: row?.bio || "",
     email: row?.email || "",
     siteTitle: (row?.site_title || "").trim() || nickname,
@@ -145,9 +165,10 @@ function toIso(value: string): string {
 export async function loadPostBundle(
   db: D1Database,
   posts: PostRow[],
-  visitorId: string
+  visitorId: string,
+  env: Env
 ) {
-  const profile = await getProfile(db);
+  const profile = await getProfile(db, env);
   if (posts.length === 0) {
     return { profile, items: [] as ReturnType<typeof mapPost>[] };
   }
@@ -178,7 +199,7 @@ export async function loadPostBundle(
   return {
     profile,
     items: posts.map((row) =>
-      mapPost(row, profile, likesByPost.get(row.id) || [], commentsByPost.get(row.id) || [], visitorId)
+      mapPost(row, profile, likesByPost.get(row.id) || [], commentsByPost.get(row.id) || [], visitorId, env)
     ),
   };
 }

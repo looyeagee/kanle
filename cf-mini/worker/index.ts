@@ -3,7 +3,7 @@ import { getCookie, setCookie } from "hono/cookie";
 import { sign, verify } from "hono/jwt";
 import { ensureDefaultAdmin, type AdminJwt } from "./lib/auth";
 import { hashPassword, verifyPassword } from "./lib/crypto";
-import { buildObjectKey, extFromName, publicMediaUrl } from "./lib/media";
+import { buildObjectKey, extFromName, MEDIA_CACHE_CONTROL, publicMediaUrl } from "./lib/media";
 import { extractMotionPhoto } from "./lib/motion-photo";
 import {
   getProfile,
@@ -60,14 +60,14 @@ async function getAdminFromRequest(c: { req: { header: (n: string) => string | u
 }
 
 app.get("/api/profile", async (c) => {
-  const profile = await getProfile(c.env.DB);
+  const profile = await getProfile(c.env.DB, c.env);
   return c.json(profile);
 });
 
 app.put("/api/profile", async (c) => {
   const admin = await getAdminFromRequest(c);
   if (!admin) return c.json({ message: "未登录" }, 401);
-  const current = await getProfile(c.env.DB);
+  const current = await getProfile(c.env.DB, c.env);
   const body = await c.req.json<{
     nickname?: string;
     avatar?: string;
@@ -86,7 +86,7 @@ app.put("/api/profile", async (c) => {
     ).bind(nickname, avatar, cover, bio, siteTitle),
     c.env.DB.prepare("UPDATE admins SET nickname = ? WHERE id = ?").bind(nickname, admin.sub),
   ]);
-  return c.json(await getProfile(c.env.DB));
+  return c.json(await getProfile(c.env.DB, c.env));
 });
 
 app.post("/api/auth/login", async (c) => {
@@ -163,7 +163,7 @@ app.get("/api/posts", async (c) => {
   const list = rows.results || [];
   const hasMore = list.length > limit;
   const pageRows = hasMore ? list.slice(0, limit) : list;
-  const bundle = await loadPostBundle(c.env.DB, pageRows, visitorId);
+  const bundle = await loadPostBundle(c.env.DB, pageRows, visitorId, c.env);
   return c.json({
     data: bundle.items,
     pagination: { page, limit, hasMore },
@@ -176,7 +176,7 @@ app.get("/api/posts/:id", async (c) => {
     .bind(id)
     .first<PostRow>();
   if (!row) return c.json({ message: "未找到" }, 404);
-  const bundle = await loadPostBundle(c.env.DB, [row], c.get("visitorId"));
+  const bundle = await loadPostBundle(c.env.DB, [row], c.get("visitorId"), c.env);
   return c.json(bundle.items[0]);
 });
 
@@ -217,7 +217,7 @@ app.post("/api/posts", async (c) => {
     )
     .run();
   const row = await c.env.DB.prepare("SELECT * FROM posts WHERE id = ?").bind(id).first<PostRow>();
-  const bundle = await loadPostBundle(c.env.DB, row ? [row] : [], c.get("visitorId"));
+  const bundle = await loadPostBundle(c.env.DB, row ? [row] : [], c.get("visitorId"), c.env);
   return c.json(bundle.items[0], 201);
 });
 
@@ -260,7 +260,7 @@ app.put("/api/posts/:id", async (c) => {
     )
     .run();
   const row = await c.env.DB.prepare("SELECT * FROM posts WHERE id = ?").bind(id).first<PostRow>();
-  const bundle = await loadPostBundle(c.env.DB, row ? [row] : [], c.get("visitorId"));
+  const bundle = await loadPostBundle(c.env.DB, row ? [row] : [], c.get("visitorId"), c.env);
   return c.json(bundle.items[0]);
 });
 
@@ -401,7 +401,7 @@ app.post("/api/upload/motion-photo", async (c) => {
       file.type ||
       (ext === ".heic" || ext === ".heif" ? "image/heic" : "image/jpeg");
     const key = buildObjectKey("image", ext);
-    await c.env.MEDIA.put(key, buf, { httpMetadata: { contentType: mime } });
+    await c.env.MEDIA.put(key, buf, { httpMetadata: { contentType: mime, cacheControl: MEDIA_CACHE_CONTROL } });
     return c.json({ src: publicMediaUrl(c.env, key), video: undefined, live: false });
   }
   const imageExt = extracted.imageMime === "image/heic" ? ".heic" : ".jpg";
@@ -409,8 +409,8 @@ app.post("/api/upload/motion-photo", async (c) => {
   const imageKey = buildObjectKey("live", imageExt);
   const videoKey = buildObjectKey("live", videoExt);
   await Promise.all([
-    c.env.MEDIA.put(imageKey, extracted.image, { httpMetadata: { contentType: extracted.imageMime } }),
-    c.env.MEDIA.put(videoKey, extracted.video, { httpMetadata: { contentType: extracted.videoMime } }),
+    c.env.MEDIA.put(imageKey, extracted.image, { httpMetadata: { contentType: extracted.imageMime, cacheControl: MEDIA_CACHE_CONTROL } }),
+    c.env.MEDIA.put(videoKey, extracted.video, { httpMetadata: { contentType: extracted.videoMime, cacheControl: MEDIA_CACHE_CONTROL } }),
   ]);
   return c.json({
     src: publicMediaUrl(c.env, imageKey),
@@ -469,7 +469,10 @@ async function uploadOne(
   }
   const key = buildObjectKey(kind, ext);
   await c.env.MEDIA.put(key, file.stream(), {
-    httpMetadata: { contentType: file.type || (kind === "video" ? "video/mp4" : "image/jpeg") },
+    httpMetadata: {
+      contentType: file.type || (kind === "video" ? "video/mp4" : "image/jpeg"),
+      cacheControl: MEDIA_CACHE_CONTROL,
+    },
   });
   const url = publicMediaUrl(c.env, key);
   return Response.json({ url, key });

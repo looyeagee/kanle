@@ -34,7 +34,7 @@ async function articleTitle(env: Env, pathname: string): Promise<string> {
 
 async function loadProfile(env: Env): Promise<Profile> {
   try {
-    return await getProfile(env.DB);
+    return await getProfile(env.DB, env);
   } catch (err) {
     console.error("ssr profile", err);
     return fallbackProfile;

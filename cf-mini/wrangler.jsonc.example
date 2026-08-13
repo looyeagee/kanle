@@ -14,6 +14,7 @@
     "run_worker_first": ["/", "/articles/*", "/admin", "/admin/*", "/api/*"]
   },
   "vars": {
+    // 生产可填 R2 自定义域名，如 "https://media.example.com"；本地请留空，走 /api/media 回源
     "R2_PUBLIC_BASE": ""
   },
   "d1_databases": [
