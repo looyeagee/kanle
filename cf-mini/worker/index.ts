@@ -24,7 +24,7 @@ type AppEnv = {
 
 const app = new Hono<AppEnv>();
 
-const IMAGE_EXTS = new Set([".jpg", ".jpeg", ".png", ".gif", ".webp"]);
+const IMAGE_EXTS = new Set([".jpg", ".jpeg", ".png", ".gif", ".webp", ".heic", ".heif"]);
 const VIDEO_EXTS = new Set([".mp4", ".mov", ".webm", ".m4v", ".3gp"]);
 const IMAGE_MAX = 15 * 1024 * 1024;
 const MOTION_MAX = 40 * 1024 * 1024;
@@ -363,6 +363,18 @@ app.post("/api/posts/:id/comments", async (c) => {
   });
 });
 
+app.delete("/api/posts/:id/comments/:commentId", async (c) => {
+  const admin = await getAdminFromRequest(c);
+  if (!admin) return c.json({ message: "未登录" }, 401);
+  const postId = c.req.param("id");
+  const commentId = c.req.param("commentId");
+  const res = await c.env.DB.prepare("DELETE FROM comments WHERE id = ? AND post_id = ?")
+    .bind(commentId, postId)
+    .run();
+  if (!res.meta.changes) return c.json({ message: "未找到" }, 404);
+  return c.json({ ok: true });
+});
+
 app.post("/api/upload", async (c) => {
   const admin = await getAdminFromRequest(c);
   if (!admin) return c.json({ message: "未登录" }, 401);
@@ -384,12 +396,18 @@ app.post("/api/upload/motion-photo", async (c) => {
   const buf = new Uint8Array(await file.arrayBuffer());
   const extracted = extractMotionPhoto(buf);
   if (!extracted) {
-    const key = buildObjectKey("image", extFromName(file.name, ".jpg"));
-    await c.env.MEDIA.put(key, buf, { httpMetadata: { contentType: file.type || "image/jpeg" } });
+    const ext = extFromName(file.name, ".jpg");
+    const mime =
+      file.type ||
+      (ext === ".heic" || ext === ".heif" ? "image/heic" : "image/jpeg");
+    const key = buildObjectKey("image", ext);
+    await c.env.MEDIA.put(key, buf, { httpMetadata: { contentType: mime } });
     return c.json({ src: publicMediaUrl(c.env, key), video: undefined, live: false });
   }
-  const imageKey = buildObjectKey("live", ".jpg");
-  const videoKey = buildObjectKey("live", ".mp4");
+  const imageExt = extracted.imageMime === "image/heic" ? ".heic" : ".jpg";
+  const videoExt = extracted.videoMime === "video/quicktime" ? ".mov" : ".mp4";
+  const imageKey = buildObjectKey("live", imageExt);
+  const videoKey = buildObjectKey("live", videoExt);
   await Promise.all([
     c.env.MEDIA.put(imageKey, extracted.image, { httpMetadata: { contentType: extracted.imageMime } }),
     c.env.MEDIA.put(videoKey, extracted.video, { httpMetadata: { contentType: extracted.videoMime } }),

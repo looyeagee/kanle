@@ -8,6 +8,7 @@ interface InteractionBubbleProps {
   likes: LikeInfo[];
   comments: Comment[];
   onReply?: (commentId: string) => void;
+  onDeleteComment?: (commentId: string) => void;
 }
 
 const VISITOR_NAMES = new Set(["访客", "游客"]);
@@ -36,7 +37,7 @@ function formatLikes(likes: LikeInfo[]): string {
   return `${displayNames.join("，")}觉得很赞`;
 }
 
-export default function InteractionBubble({ likes, comments, onReply }: InteractionBubbleProps) {
+export default function InteractionBubble({ likes, comments, onReply, onDeleteComment }: InteractionBubbleProps) {
   const [expanded, setExpanded] = useState(false);
   if (likes.length === 0 && comments.length === 0) return null;
   const likesText = formatLikes(likes);
@@ -57,11 +58,11 @@ export default function InteractionBubble({ likes, comments, onReply }: Interact
       {comments.length > 0 && (
         <ul className="space-y-[3px] text-[15px] font-normal leading-[24px] md:text-[16px]">
           {displayedComments.map((comment) => (
-            <li key={comment.id} id={`comment-${comment.id}`} className="break-all scroll-mt-20">
+            <li key={comment.id} id={`comment-${comment.id}`} className="flex items-start gap-2 scroll-mt-20">
               <button
                 type="button"
                 onClick={() => onReply?.(comment.id)}
-                className="min-w-0 w-full cursor-pointer text-left transition-colors hover:text-wechat-link"
+                className="min-w-0 flex-1 cursor-pointer break-all text-left transition-colors hover:text-wechat-link"
               >
                 <span className="text-wechat-nickname">{comment.author}</span>
                 {comment.replyTo && (
@@ -72,6 +73,15 @@ export default function InteractionBubble({ likes, comments, onReply }: Interact
                 )}
                 <span className="text-wechat-text">：{comment.content}</span>
               </button>
+              {onDeleteComment && (
+                <button
+                  type="button"
+                  onClick={() => onDeleteComment(comment.id)}
+                  className="mt-[1px] shrink-0 text-[13px] leading-[24px] text-wechat-time transition-colors hover:text-red-500"
+                >
+                  删除
+                </button>
+              )}
             </li>
           ))}
         </ul>

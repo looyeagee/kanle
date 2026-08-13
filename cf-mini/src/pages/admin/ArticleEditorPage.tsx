@@ -9,6 +9,7 @@ export default function ArticleEditorPage() {
   const navigate = useNavigate();
   const isNew = !id || id === "new";
   const [title, setTitle] = useState("");
+  const [excerpt, setExcerpt] = useState("");
   const [cover, setCover] = useState("");
   const [category, setCategory] = useState("");
   const [content, setContent] = useState("");
@@ -20,6 +21,7 @@ export default function ArticleEditorPage() {
     if (isNew) return;
     api<Post>(`/posts/${id}`).then((p) => {
       setTitle(p.title || "");
+      setExcerpt(p.excerpt || "");
       setCover(p.cover || "");
       setCategory(p.category || "");
       setContent(p.content || "");
@@ -40,7 +42,9 @@ export default function ArticleEditorPage() {
         cover,
         category: category.trim(),
         content,
-        excerpt: content.replace(/[#>*_`\-\[\]]/g, "").replace(/\s+/g, " ").trim().slice(0, 160),
+        excerpt:
+          excerpt.trim() ||
+          content.replace(/[#>*_`\-\[\]]/g, "").replace(/\s+/g, " ").trim().slice(0, 160),
         images: [],
         video: null,
       };
@@ -67,6 +71,17 @@ export default function ArticleEditorPage() {
         placeholder="标题"
         className="w-full rounded-xl border border-adm-border bg-adm-input px-3 py-2 text-lg outline-none"
       />
+      <label className="block">
+        <span className="mb-1.5 block text-sm text-adm-text-secondary">朋友圈节选</span>
+        <textarea
+          value={excerpt}
+          onChange={(e) => setExcerpt(e.target.value.slice(0, 160))}
+          placeholder="显示在朋友圈文章卡片里，留空则从正文自动截取"
+          rows={3}
+          className="w-full rounded-xl border border-adm-border bg-adm-input px-3 py-2 text-sm outline-none"
+        />
+        <span className="mt-1 block text-right text-xs text-adm-text-secondary">{excerpt.length}/160</span>
+      </label>
       <div className="flex gap-3">
         <input
           value={category}

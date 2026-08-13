@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type MouseEvent as ReactMouseEvent, type TouchEvent as ReactTouchEvent } from "react";
 import { Volume2, VolumeX } from "lucide-react";
 import ImageViewer from "./ImageViewer";
+import LiveBadge from "./LiveBadge";
 import type { PostImage } from "@/lib/types";
 import { getImageSrc, getVideoSrc, isLivePhoto } from "@/lib/post-image";
 
@@ -17,22 +18,6 @@ function FadeImage({ src, alt, className = "" }: { src: string; alt: string; cla
   );
 }
 
-function LiveBadge({ hidden }: { hidden: boolean }) {
-  return (
-    <span
-      className={`pointer-events-none absolute left-1.5 top-1.5 z-20 flex items-center gap-1 rounded-full bg-black/55 px-1.5 py-0.5 text-[10px] font-medium text-white backdrop-blur-sm transition-opacity duration-300 ${
-        hidden ? "opacity-0" : "opacity-100"
-      }`}
-    >
-      <svg className="h-3 w-3 animate-spin [animation-duration:5s]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-        <circle cx="12" cy="12" r="1" fill="currentColor" stroke="none" />
-        <circle cx="12" cy="12" r="5" />
-      </svg>
-      实况
-    </span>
-  );
-}
-
 const stopProp = (e: ReactMouseEvent | ReactTouchEvent) => e.stopPropagation();
 
 export default function ImageGrid({ images }: { images: PostImage[] }) {
@@ -42,7 +27,7 @@ export default function ImageGrid({ images }: { images: PostImage[] }) {
   const [playingIndex, setPlayingIndex] = useState(-1);
   const [videoMounted, setVideoMounted] = useState(-1);
   const [videoOpacity, setVideoOpacity] = useState(false);
-  const [muted, setMuted] = useState(false);
+  const [muted, setMuted] = useState(true);
   const [isDesktop, setIsDesktop] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const pressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -187,7 +172,7 @@ export default function ImageGrid({ images }: { images: PostImage[] }) {
     const src = getImageSrc(img);
     const video = getVideoSrc(img);
     const live = isLivePhoto(img);
-    const playing = playingIndex === i;
+    const playing = playingIndex === i && videoOpacity;
     const videoHere = videoMounted === i;
     return (
       <>

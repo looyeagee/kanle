@@ -8,7 +8,7 @@ import InteractionBubble from "@/components/InteractionBubble";
 import CommentSection from "@/components/CommentSection";
 import ActionMenu from "@/components/ActionMenu";
 import { api } from "@/lib/api";
-import { getVisitorName } from "@/lib/auth";
+import { getAdmin, getVisitorName } from "@/lib/auth";
 import { renderMarkdown } from "@/lib/markdown";
 import { formatRelativeTime } from "@/lib/time";
 import { readBootstrapProfile } from "@/lib/bootstrap";
@@ -109,6 +109,15 @@ export default function ArticlePage() {
                     setReplyTo(cid);
                     setShowComments(true);
                   }}
+                  onDeleteComment={
+                    getAdmin()
+                      ? async (commentId) => {
+                          if (!id || !confirm("删除这条评论？")) return;
+                          await api(`/posts/${id}/comments/${commentId}`, { method: "DELETE" });
+                          setComments((prev) => prev.filter((c) => c.id !== commentId));
+                        }
+                      : undefined
+                  }
                 />
                 {showComments && (
                   <CommentSection

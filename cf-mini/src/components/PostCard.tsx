@@ -181,6 +181,15 @@ export default function PostCard({
             setReplyTo(commentId);
             setShowComments(true);
           }}
+          onDeleteComment={
+            isAdmin
+              ? async (commentId) => {
+                  if (!confirm("删除这条评论？")) return;
+                  await api(`/posts/${post.id}/comments/${commentId}`, { method: "DELETE" });
+                  setComments((prev) => prev.filter((c) => c.id !== commentId));
+                }
+              : undefined
+          }
         />
         {showComments && (
           <CommentSection

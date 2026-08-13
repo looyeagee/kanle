@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { ChevronLeft, ChevronRight, Volume2, VolumeX, X } from "lucide-react";
 import type { PostImage } from "@/lib/types";
 import { getImageSrc, getVideoSrc } from "@/lib/post-image";
+import LiveBadge from "./LiveBadge";
 
 interface ImageViewerProps {
   images: PostImage[];
@@ -14,7 +15,7 @@ interface ImageViewerProps {
 export default function ImageViewer({ images, initialIndex, onClose }: ImageViewerProps) {
   const [index, setIndex] = useState(initialIndex);
   const [playLive, setPlayLive] = useState(true);
-  const [muted, setMuted] = useState(false);
+  const [muted, setMuted] = useState(true);
   const current = images[index];
   const src = getImageSrc(current);
   const video = getVideoSrc(current);
@@ -60,11 +61,26 @@ export default function ImageViewer({ images, initialIndex, onClose }: ImageView
           <ChevronRight className="h-6 w-6" />
         </button>
       )}
-      <div className="relative max-h-[90vh] max-w-[92vw]" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="relative max-h-[90vh] max-w-[92vw]"
+        onClick={(e) => {
+          e.stopPropagation();
+          if (video && !playLive) setPlayLive(true);
+        }}
+      >
         {playLive && video ? (
           <video src={video} autoPlay playsInline muted={muted} controls={false} className="max-h-[90vh] max-w-[92vw] object-contain" onEnded={() => setPlayLive(false)} />
         ) : (
-          <img src={src} alt="" className="max-h-[90vh] max-w-[92vw] object-contain" />
+          <img src={src} alt="" className={`max-h-[90vh] max-w-[92vw] object-contain ${video ? "cursor-pointer" : ""}`} />
+        )}
+        {video && (
+          <LiveBadge
+            hidden={playLive}
+            className="left-3 top-3 px-3 py-1.5 text-xs"
+            onClick={() => {
+              if (!playLive) setPlayLive(true);
+            }}
+          />
         )}
         {video && (
           <button
