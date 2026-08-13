@@ -31,8 +31,7 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-adm-bg px-4">
       <form onSubmit={submit} className="w-full max-w-sm rounded-2xl bg-adm-card p-6 shadow-sm">
-        <h1 className="mb-1 text-lg font-semibold text-adm-text">后台登录</h1>
-        <p className="mb-5 text-sm text-adm-text-secondary">默认账号 admin@local / admin123</p>
+        <h1 className="mb-5 text-lg font-semibold text-adm-text">后台登录</h1>
         <label className="mb-3 block text-sm">
           邮箱
           <input

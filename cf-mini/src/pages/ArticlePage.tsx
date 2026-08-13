@@ -11,6 +11,7 @@ import { api } from "@/lib/api";
 import { getVisitorName } from "@/lib/auth";
 import { renderMarkdown } from "@/lib/markdown";
 import { formatRelativeTime } from "@/lib/time";
+import { readBootstrapProfile } from "@/lib/bootstrap";
 import { setDocumentTitle, siteTitleOf } from "@/lib/title";
 import type { Comment, Post, User } from "@/lib/types";
 
@@ -23,7 +24,7 @@ export default function ArticlePage() {
   const [comments, setComments] = useState<Comment[]>([]);
   const [showComments, setShowComments] = useState(true);
   const [replyTo, setReplyTo] = useState<string | undefined>();
-  const [siteTitle, setSiteTitle] = useState("看了");
+  const [siteTitle, setSiteTitle] = useState(siteTitleOf(readBootstrapProfile()));
 
   useEffect(() => {
     api<User>("/profile")

@@ -8,18 +8,15 @@ import FloatingActions from "@/components/FloatingActions";
 import MomentEditor from "@/components/MomentEditor";
 import { api } from "@/lib/api";
 import { getAdmin } from "@/lib/auth";
+import { emptyProfile, readBootstrapProfile } from "@/lib/bootstrap";
 import { setDocumentTitle, siteTitleOf } from "@/lib/title";
 import type { Post, User } from "@/lib/types";
 
+const bootstrapped = readBootstrapProfile();
+
 export default function HomePage() {
-  const [owner, setOwner] = useState<User>({
-    id: "owner",
-    nickname: "",
-    avatar: "",
-    cover: "",
-    bio: "",
-  });
-  const [profileLoading, setProfileLoading] = useState(true);
+  const [owner, setOwner] = useState<User>(bootstrapped ?? emptyProfile());
+  const [profileLoading, setProfileLoading] = useState(!bootstrapped);
   const [editing, setEditing] = useState<Post | null>(null);
 
   useEffect(() => {

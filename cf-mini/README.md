@@ -6,6 +6,7 @@ Workers（静态资源 + Hono API）+ D1 + R2。不依赖 Cloudflare Pages。
 
 ```bash
 cd cf-mini
+cp wrangler.jsonc.example wrangler.jsonc
 npm install
 npx wrangler d1 migrations apply kanle-mini --local
 npm run dev
@@ -17,12 +18,13 @@ npm run dev
 
 ## 上线
 
-1. `npx wrangler d1 create kanle-mini`，把返回的 `database_id` 填进 `wrangler.jsonc`
-2. `npx wrangler r2 bucket create kanle-mini-media`
-3. 可选：打开 R2 公开访问，把域名写入 secret/var `R2_PUBLIC_BASE`（如 `https://pub-xxx.r2.dev`）
-4. `npx wrangler secret put JWT_SECRET`
-5. `npx wrangler d1 migrations apply kanle-mini --remote`
-6. `npm run deploy`
+1. 复制 `wrangler.jsonc.example` 为 `wrangler.jsonc`（此文件已 gitignore，不要提交）
+2. `npx wrangler d1 create kanle-mini`，把返回的 `database_id` 填进 `wrangler.jsonc`
+3. `npx wrangler r2 bucket create kanle-mini-media`
+4. 可选：打开 R2 公开访问，把域名写入 secret/var `R2_PUBLIC_BASE`（如 `https://pub-xxx.r2.dev`）
+5. `npx wrangler secret put JWT_SECRET`
+6. `npx wrangler d1 migrations apply kanle-mini --remote`
+7. `npm run deploy`
 
 ## 功能
 

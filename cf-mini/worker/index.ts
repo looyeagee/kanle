@@ -12,6 +12,7 @@ import {
   type PostImage,
   type PostVideo,
 } from "./lib/posts";
+import { serveSpa } from "./lib/ssr";
 
 type AppEnv = {
   Bindings: Env;
@@ -456,4 +457,12 @@ async function uploadOne(
   return Response.json({ url, key });
 }
 
-export default app;
+export default {
+  fetch(request, env, ctx) {
+    const url = new URL(request.url);
+    if (url.pathname.startsWith("/api/")) {
+      return app.fetch(request, env, ctx);
+    }
+    return serveSpa(request, env);
+  },
+} satisfies ExportedHandler<Env>;
