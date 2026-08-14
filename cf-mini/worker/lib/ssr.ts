@@ -105,10 +105,22 @@ export async function serveSpa(request: Request, env: Env): Promise<Response> {
   const headers = new Headers(assetRes.headers);
   headers.set("Cache-Control", "private, no-cache");
 
+  const icon = (profile.avatar || "").trim();
+
   return new HTMLRewriter()
     .on("title", {
       element(el) {
         el.setInnerContent(title);
+      },
+    })
+    .on("link#kanle-icon", {
+      element(el) {
+        if (icon) el.setAttribute("href", icon);
+      },
+    })
+    .on("link#kanle-apple-icon", {
+      element(el) {
+        if (icon) el.setAttribute("href", icon);
       },
     })
     .on("script#kanle-bootstrap", {

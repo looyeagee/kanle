@@ -555,9 +555,17 @@ async function uploadOne(
   return Response.json({ url, key });
 }
 
+const EMPTY_ICON_PATHS = new Set(["/favicon.ico", "/apple-touch-icon.png", "/apple-touch-icon-precomposed.png"]);
+
 export default {
   fetch(request, env, ctx) {
     const url = new URL(request.url);
+    if (EMPTY_ICON_PATHS.has(url.pathname)) {
+      return new Response(null, {
+        status: 204,
+        headers: { "Cache-Control": "public, max-age=86400" },
+      });
+    }
     if (url.pathname.startsWith("/api/")) {
       return app.fetch(request, env, ctx);
     }

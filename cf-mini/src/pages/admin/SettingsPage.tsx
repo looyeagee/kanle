@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { api, uploadFile } from "@/lib/api";
 import { getAdmin, setAdmin } from "@/lib/auth";
-import { resolveAvatar } from "@/lib/avatar";
+import { resolveAvatar, applyFavicon } from "@/lib/avatar";
 import type { User } from "@/lib/types";
 
 type AdminMe = {
@@ -85,6 +85,7 @@ export default function SettingsPage() {
       setCover(profile.cover || "");
       setBio(profile.bio || "");
       setSiteTitle(profile.siteTitle || profile.nickname);
+      applyFavicon(resolveAvatar(profile.avatar, email, 64));
       setOk("已保存");
     } catch (err) {
       setError(err instanceof Error ? err.message : "保存失败");

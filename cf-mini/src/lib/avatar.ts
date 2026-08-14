@@ -14,3 +14,16 @@ export function actorAvatarUrl(email: string, name: string, size = 64): string {
   const source = (email || "").trim().toLowerCase() || (name || "访客").trim().toLowerCase();
   return cravatarUrl(source, size);
 }
+
+export function applyFavicon(url: string) {
+  if (typeof document === "undefined") return;
+  const href = url.trim();
+  if (!href) return;
+  const targets = [
+    document.querySelector<HTMLLinkElement>("link#kanle-icon"),
+    document.querySelector<HTMLLinkElement>("link#kanle-apple-icon"),
+  ];
+  for (const link of targets) {
+    if (link) link.href = href;
+  }
+}
