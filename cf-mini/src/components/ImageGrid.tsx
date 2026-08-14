@@ -32,7 +32,6 @@ export default function ImageGrid({ images }: { images: PostImage[] }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const pressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressedRef = useRef(false);
-  const fadeOutTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
@@ -56,10 +55,6 @@ export default function ImageGrid({ images }: { images: PostImage[] }) {
   }, []);
 
   const playVideo = useCallback((i: number) => {
-    if (fadeOutTimerRef.current) {
-      clearTimeout(fadeOutTimerRef.current);
-      fadeOutTimerRef.current = null;
-    }
     setVideoOpacity(false);
     setVideoMounted(i);
     setPlayingIndex(i);
@@ -68,10 +63,7 @@ export default function ImageGrid({ images }: { images: PostImage[] }) {
   const stopVideo = useCallback(() => {
     setVideoOpacity(false);
     setPlayingIndex(-1);
-    fadeOutTimerRef.current = setTimeout(() => {
-      setVideoMounted(-1);
-      fadeOutTimerRef.current = null;
-    }, 300);
+    setVideoMounted(-1);
   }, []);
 
   useEffect(() => {
@@ -160,7 +152,6 @@ export default function ImageGrid({ images }: { images: PostImage[] }) {
 
   useEffect(() => () => {
     clearPressTimer();
-    if (fadeOutTimerRef.current) clearTimeout(fadeOutTimerRef.current);
   }, [clearPressTimer]);
 
   const count = images.length;
@@ -178,9 +169,9 @@ export default function ImageGrid({ images }: { images: PostImage[] }) {
       <>
         <button
           type="button"
-          className={`absolute inset-0 h-full w-full cursor-zoom-in transition-all duration-300 ${playing ? "scale-90 opacity-0" : "scale-100 opacity-100"}`}
+          className={`absolute inset-0 h-full w-full cursor-zoom-in ${playing ? "opacity-0" : "opacity-100"}`}
         >
-          <FadeImage src={src} alt="朋友圈图片" className="object-cover transition-transform duration-200 hover:scale-105" />
+          <FadeImage src={src} alt="朋友圈图片" className="object-cover" />
         </button>
         {videoHere && video && (
           <video
@@ -192,7 +183,7 @@ export default function ImageGrid({ images }: { images: PostImage[] }) {
             onCanPlay={() => setVideoOpacity(true)}
             onPlaying={() => setVideoOpacity(true)}
             onEnded={stopVideo}
-            className={`absolute inset-0 h-full w-full object-cover transition-all duration-300 ${videoOpacity ? "opacity-100 scale-100" : "opacity-0 scale-110"}`}
+            className={`absolute inset-0 h-full w-full object-cover ${videoOpacity ? "opacity-100" : "opacity-0"}`}
             onClick={(e) => {
               e.stopPropagation();
               handleClick(i, e.currentTarget.parentElement!);
