@@ -20,6 +20,10 @@ export default function HomePage() {
   const [editing, setEditing] = useState<Post | null>(null);
 
   useEffect(() => {
+    if (bootstrapped) {
+      setProfileLoading(false);
+      return;
+    }
     api<User>("/profile")
       .then((p) => setOwner({ ...p, id: "owner" }))
       .catch(() => {})

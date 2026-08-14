@@ -168,15 +168,62 @@ function toIso(value: string): string {
   return new Date(value.replace(" ", "T") + "Z").toISOString();
 }
 
+export async function queryPostRows(
+  db: D1Database,
+  opts: { page: number; limit: number; type?: string }
+) {
+  const offset = (opts.page - 1) * opts.limit;
+  const stmt =
+    opts.type === "moment" || opts.type === "article"
+      ? db
+          .prepare(
+            "SELECT * FROM posts WHERE type = ? ORDER BY pinned DESC, created_at DESC LIMIT ? OFFSET ?"
+          )
+          .bind(opts.type, opts.limit + 1, offset)
+      : db
+          .prepare("SELECT * FROM posts ORDER BY pinned DESC, created_at DESC LIMIT ? OFFSET ?")
+          .bind(opts.limit + 1, offset);
+  const rows = await stmt.all<PostRow>();
+  const list = rows.results || [];
+  const hasMore = list.length > opts.limit;
+  return { rows: hasMore ? list.slice(0, opts.limit) : list, hasMore };
+}
+
+export async function listPosts(
+  db: D1Database,
+  env: Env,
+  opts: { page: number; limit: number; type?: string; actorUsername?: string | null; profile?: Profile }
+) {
+  const { rows, hasMore } = await queryPostRows(db, opts);
+  const bundle = await loadPostBundle(db, rows, env, opts.actorUsername, opts.profile);
+  return { items: bundle.items, profile: bundle.profile, hasMore };
+}
+
+export async function loadHomeBootstrap(db: D1Database, env: Env, actorUsername?: string | null) {
+  const profile = await getProfile(db, env);
+  const [feed, articles] = await Promise.all([
+    listPosts(db, env, { page: 1, limit: 10, actorUsername, profile }),
+    listPosts(db, env, { page: 1, limit: 5, type: "article", actorUsername, profile }),
+  ]);
+  return {
+    profile,
+    posts: feed.items,
+    postsHasMore: feed.hasMore,
+    articles: articles.items,
+    articlesHasMore: articles.hasMore,
+  };
+}
+
 export async function loadPostBundle(
   db: D1Database,
   posts: PostRow[],
   env: Env,
-  actorUsername?: string | null
+  actorUsername?: string | null,
+  profile?: Profile
 ) {
-  const profile = await getProfile(db, env);
+  const site = profile ?? (await getProfile(db, env));
   if (posts.length === 0) {
-    return { profile, items: [] as ReturnType<typeof mapPost>[] };
+    return { profile: site, items: [] as ReturnType<typeof mapPost>[] };
   }
   const ids = posts.map((p) => p.id);
   const placeholders = ids.map(() => "?").join(",");
@@ -203,9 +250,9 @@ export async function loadPostBundle(
     commentsByPost.set(comment.post_id, list);
   }
   return {
-    profile,
+    profile: site,
     items: posts.map((row) =>
-      mapPost(row, profile, likesByPost.get(row.id) || [], commentsByPost.get(row.id) || [], env, actorUsername)
+      mapPost(row, site, likesByPost.get(row.id) || [], commentsByPost.get(row.id) || [], env, actorUsername)
     ),
   };
 }

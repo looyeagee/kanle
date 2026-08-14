@@ -3,13 +3,16 @@ import { Link, useLocation } from "react-router-dom";
 import { BookText } from "lucide-react";
 import type { Post } from "@/lib/types";
 import { api } from "@/lib/api";
+import { readBootstrapArticles } from "@/lib/bootstrap";
 import { formatArticleDate } from "@/lib/time";
 
+const bootArticles = readBootstrapArticles();
+
 export default function ArticleListSidebar() {
-  const [articles, setArticles] = useState<Post[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [articles, setArticles] = useState<Post[]>(bootArticles?.articles ?? []);
+  const [loading, setLoading] = useState(!bootArticles);
   const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(false);
+  const [hasMore, setHasMore] = useState(bootArticles?.hasMore ?? false);
   const [loadingMore, setLoadingMore] = useState(false);
   const sidebarScrollRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
@@ -17,6 +20,7 @@ export default function ArticleListSidebar() {
   const PAGE_SIZE = 5;
 
   useEffect(() => {
+    if (bootArticles) return;
     api<{ data: Post[] }>(`/posts?type=article&page=1&limit=${PAGE_SIZE}`)
       .then((data) => {
         setArticles(data.data || []);

@@ -142,6 +142,20 @@ export async function finishGithubLogin(c: Context): Promise<Response> {
   return c.redirect(`${url.origin}${next}`, 302);
 }
 
+export async function githubLoginFromCookie(request: Request, env: Env): Promise<string | null> {
+  if (!env.JWT_SECRET) return null;
+  const match = request.headers.get("Cookie")?.match(new RegExp(`(?:^|;\\s*)${SESSION_COOKIE}=([^;]+)`));
+  const token = match?.[1] ? decodeURIComponent(match[1]) : "";
+  if (!token) return null;
+  try {
+    const payload = (await verify(token, env.JWT_SECRET, "HS256")) as GithubUser & { exp?: number };
+    if (payload.kind !== "github" || !payload.login) return null;
+    return payload.login;
+  } catch {
+    return null;
+  }
+}
+
 export async function getGithubUserFromRequest(c: CookieReq): Promise<GithubUser | null> {
   const token = getCookie(c, SESSION_COOKIE) || "";
   if (!token || !c.env.JWT_SECRET) return null;

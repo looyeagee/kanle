@@ -1,4 +1,5 @@
-import { getProfile, type Profile } from "./posts";
+import { githubLoginFromCookie } from "./github";
+import { getProfile, loadHomeBootstrap, type Profile } from "./posts";
 
 const fallbackProfile: Profile = {
   nickname: "看了",
@@ -15,6 +16,10 @@ function jsonForScript(value: unknown): string {
 
 function siteTitleOf(profile: { siteTitle: string; nickname: string }): string {
   return (profile.siteTitle || profile.nickname || "看了").trim() || "看了";
+}
+
+function isHomePath(pathname: string): boolean {
+  return pathname === "/" || pathname === "";
 }
 
 async function articleTitle(env: Env, pathname: string): Promise<string> {
@@ -41,10 +46,40 @@ async function loadProfile(env: Env): Promise<Profile> {
   }
 }
 
+function profilePayload(profile: Profile) {
+  return {
+    nickname: profile.nickname,
+    avatar: profile.avatar,
+    cover: profile.cover,
+    bio: profile.bio,
+    email: profile.email,
+    siteTitle: profile.siteTitle,
+  };
+}
+
+type HomeBoot = {
+  profile: Profile;
+  posts?: unknown;
+  postsHasMore?: boolean;
+  articles?: unknown;
+  articlesHasMore?: boolean;
+};
+
 export async function serveSpa(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url);
-  const [profile, postTitle, assetRes] = await Promise.all([
-    loadProfile(env),
+  const home = isHomePath(url.pathname);
+  const [boot, postTitle, assetRes] = await Promise.all([
+    home
+      ? (async (): Promise<HomeBoot> => {
+          try {
+            const actorUsername = await githubLoginFromCookie(request, env);
+            return await loadHomeBootstrap(env.DB, env, actorUsername);
+          } catch (err) {
+            console.error("ssr home", err);
+            return { profile: await loadProfile(env) };
+          }
+        })()
+      : loadProfile(env).then((profile): HomeBoot => ({ profile })),
     articleTitle(env, url.pathname),
     env.ASSETS.fetch(request),
   ]);
@@ -52,15 +87,19 @@ export async function serveSpa(request: Request, env: Env): Promise<Response> {
   const contentType = assetRes.headers.get("content-type") || "";
   if (!contentType.includes("text/html")) return assetRes;
 
+  const profile = boot.profile || fallbackProfile;
   const siteTitle = siteTitleOf(profile);
   const title = postTitle ? `${postTitle} - ${siteTitle}` : siteTitle;
   const payload = jsonForScript({
-    nickname: profile.nickname,
-    avatar: profile.avatar,
-    cover: profile.cover,
-    bio: profile.bio,
-    email: profile.email,
-    siteTitle: profile.siteTitle,
+    ...profilePayload(profile),
+    ...(Array.isArray(boot.posts)
+      ? {
+          posts: boot.posts,
+          postsHasMore: boot.postsHasMore,
+          articles: boot.articles,
+          articlesHasMore: boot.articlesHasMore,
+        }
+      : {}),
   });
 
   const headers = new Headers(assetRes.headers);

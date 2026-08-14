@@ -14,6 +14,7 @@ import { buildObjectKey, extFromName, MEDIA_CACHE_CONTROL, publicMediaUrl, rewri
 import { extractMotionPhoto } from "./lib/motion-photo";
 import {
   getProfile,
+  listPosts,
   loadPostBundle,
   type PostRow,
   type PostImage,
@@ -195,23 +196,16 @@ app.get("/api/posts", async (c) => {
   const page = Math.max(1, Number(c.req.query("page") || 1));
   const limit = Math.min(50, Math.max(1, Number(c.req.query("limit") || 10)));
   const type = c.req.query("type");
-  const offset = (page - 1) * limit;
-  const stmt =
-    type === "moment" || type === "article"
-      ? c.env.DB.prepare(
-          "SELECT * FROM posts WHERE type = ? ORDER BY pinned DESC, created_at DESC LIMIT ? OFFSET ?"
-        ).bind(type, limit + 1, offset)
-      : c.env.DB.prepare(
-          "SELECT * FROM posts ORDER BY pinned DESC, created_at DESC LIMIT ? OFFSET ?"
-        ).bind(limit + 1, offset);
-  const rows = await stmt.all<PostRow>();
-  const list = rows.results || [];
-  const hasMore = list.length > limit;
-  const pageRows = hasMore ? list.slice(0, limit) : list;
-  const bundle = await postsFor(c, pageRows);
+  const actor = await getActor(c, await getAdminFromRequest(c));
+  const listed = await listPosts(c.env.DB, c.env, {
+    page,
+    limit,
+    type: type === "moment" || type === "article" ? type : undefined,
+    actorUsername: actor?.username,
+  });
   return c.json({
-    data: bundle.items,
-    pagination: { page, limit, hasMore },
+    data: listed.items,
+    pagination: { page, limit, hasMore: listed.hasMore },
   });
 });
 

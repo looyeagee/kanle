@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Post } from "@/lib/types";
 import { api } from "@/lib/api";
+import { readBootstrapFeed } from "@/lib/bootstrap";
 import PostCard from "./PostCard";
 
 const PAGE_SIZE = 10;
+const bootFeed = readBootstrapFeed();
 
 function FeedSkeleton() {
   return (
@@ -33,11 +35,11 @@ export default function PostList({
   initialHasMore: boolean;
   onEdit?: (post: Post) => void;
 }) {
-  const [posts, setPosts] = useState(initialPosts);
+  const [posts, setPosts] = useState(bootFeed?.posts ?? initialPosts);
   const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(initialHasMore);
+  const [hasMore, setHasMore] = useState(bootFeed?.hasMore ?? initialHasMore);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [booting, setBooting] = useState(true);
+  const [booting, setBooting] = useState(!bootFeed);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   const refresh = useCallback(async () => {
@@ -48,9 +50,11 @@ export default function PostList({
   }, []);
 
   useEffect(() => {
-    refresh()
-      .catch(() => {})
-      .finally(() => setBooting(false));
+    if (!bootFeed) {
+      refresh()
+        .catch(() => {})
+        .finally(() => setBooting(false));
+    }
     const onPublished = () => refresh().catch(() => {});
     window.addEventListener("post-published", onPublished);
     return () => window.removeEventListener("post-published", onPublished);
