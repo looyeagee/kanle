@@ -557,9 +557,23 @@ async function uploadOne(
 
 const EMPTY_ICON_PATHS = new Set(["/favicon.ico", "/apple-touch-icon.png", "/apple-touch-icon-precomposed.png"]);
 
+const ROBOTS_TXT = `User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /admin/
+`;
+
 export default {
   fetch(request, env, ctx) {
     const url = new URL(request.url);
+    if (url.pathname === "/robots.txt") {
+      return new Response(ROBOTS_TXT, {
+        headers: {
+          "Content-Type": "text/plain; charset=utf-8",
+          "Cache-Control": "public, max-age=86400",
+        },
+      });
+    }
     if (EMPTY_ICON_PATHS.has(url.pathname)) {
       return new Response(null, {
         status: 204,
