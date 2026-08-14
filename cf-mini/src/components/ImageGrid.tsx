@@ -179,15 +179,13 @@ export default function ImageGrid({ images }: { images: PostImage[] }) {
             src={video}
             muted={muted}
             playsInline
+            disablePictureInPicture
+            controlsList="nodownload noremoteplayback nopictureinpicture"
             preload="auto"
             onCanPlay={() => setVideoOpacity(true)}
             onPlaying={() => setVideoOpacity(true)}
             onEnded={stopVideo}
-            className={`absolute inset-0 h-full w-full object-cover ${videoOpacity ? "opacity-100" : "opacity-0"}`}
-            onClick={(e) => {
-              e.stopPropagation();
-              handleClick(i, e.currentTarget.parentElement!);
-            }}
+            className={`pointer-events-none absolute inset-0 h-full w-full object-cover ${videoOpacity ? "opacity-100" : "opacity-0"}`}
           />
         )}
         {live && <LiveBadge hidden={playing} />}

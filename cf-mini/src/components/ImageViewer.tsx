@@ -119,8 +119,10 @@ export default function ImageViewer({ images, initialIndex, onClose }: ImageView
             muted={muted}
             preload="auto"
             controls={false}
-            className={`absolute inset-0 h-full w-full object-contain transition-opacity duration-300 ${
-              videoReady ? "opacity-100" : "opacity-0 pointer-events-none"
+            disablePictureInPicture
+            controlsList="nodownload noremoteplayback nopictureinpicture"
+            className={`pointer-events-none absolute inset-0 h-full w-full object-contain transition-opacity duration-300 ${
+              videoReady ? "opacity-100" : "opacity-0"
             }`}
             onCanPlay={() => setVideoReady(true)}
             onPlaying={() => setVideoReady(true)}
