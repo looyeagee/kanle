@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api, uploadFile } from "@/lib/api";
-import { renderMarkdown } from "@/lib/markdown";
+import ArticleContent from "@/components/ArticleContent";
 import type { Post } from "@/lib/types";
 
 export default function ArticleEditorPage() {
@@ -114,7 +114,10 @@ export default function ArticleEditorPage() {
         </button>
       </div>
       {preview ? (
-        <div className="rich-content min-h-[280px] rounded-xl border border-adm-border bg-adm-card px-4 py-3" dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }} />
+        <ArticleContent
+          content={content}
+          className="article-content rich-content min-h-[280px] rounded-xl border border-adm-border bg-adm-card px-4 py-3 text-[16px] leading-[1.8]"
+        />
       ) : (
         <textarea
           value={content}

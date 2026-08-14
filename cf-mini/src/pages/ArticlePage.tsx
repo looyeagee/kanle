@@ -10,7 +10,7 @@ import ActionMenu from "@/components/ActionMenu";
 import { api } from "@/lib/api";
 import { getAdmin } from "@/lib/auth";
 import { startGithubLogin, useGithubUser } from "@/lib/github-session";
-import { renderMarkdown } from "@/lib/markdown";
+import ArticleContent from "@/components/ArticleContent";
 import { formatRelativeTime } from "@/lib/time";
 import { readBootstrapProfile } from "@/lib/bootstrap";
 import { setDocumentTitle, siteTitleOf } from "@/lib/title";
@@ -108,9 +108,9 @@ export default function ArticlePage() {
                   liked={liked}
                 />
               </div>
-              <div
-                className="rich-content mt-6 text-[16px] leading-7 text-wechat-text"
-                dangerouslySetInnerHTML={{ __html: renderMarkdown(post.content) }}
+              <ArticleContent
+                content={post.content}
+                className="article-content rich-content mt-5 text-[16px] leading-[1.8] text-wechat-text dark:text-gray-200 md:text-[18px] md:leading-[1.9]"
               />
               <div className="mt-8">
                 <InteractionBubble

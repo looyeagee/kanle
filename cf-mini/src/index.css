@@ -162,6 +162,339 @@ body {
   overflow: hidden;
 }
 
+/* 文章正文：与大项目 ArticleReader 的 article-content 一致 */
+.article-content {
+  overflow-wrap: break-word;
+  word-break: break-word;
+  font-weight: 400;
+}
+.article-content h1 {
+  font-size: 1.6em;
+  font-weight: 700;
+  margin: 1.2em 0 0.5em;
+  line-height: 1.35;
+}
+.article-content h2 {
+  font-size: 1.4em;
+  font-weight: 700;
+  margin: 1em 0 0.4em;
+  line-height: 1.35;
+}
+.article-content h3 {
+  font-size: 1.2em;
+  font-weight: 600;
+  margin: 0.8em 0 0.3em;
+  line-height: 1.35;
+}
+.article-content h4,
+.article-content h5,
+.article-content h6 {
+  font-weight: 600;
+  margin: 0.7em 0 0.3em;
+  line-height: 1.35;
+}
+.article-content p {
+  margin: 0.6em 0;
+  line-height: 1.8;
+}
+.article-content ul {
+  list-style: disc;
+  padding-left: 1.8em;
+  margin: 0.6em 0;
+}
+.article-content ol {
+  list-style: decimal;
+  padding-left: 1.8em;
+  margin: 0.6em 0;
+}
+.article-content li {
+  margin: 0.25em 0;
+  line-height: 1.7;
+}
+.article-content blockquote {
+  border-left: 3px solid var(--wechat-nickname);
+  padding: 0.4em 1em;
+  margin: 0.8em 0;
+  color: var(--wechat-time);
+  font-style: italic;
+  background: var(--wechat-bubble);
+  border-radius: 0 4px 4px 0;
+}
+.dark .article-content blockquote {
+  background: rgba(255, 255, 255, 0.04);
+}
+.article-content a {
+  color: var(--wechat-link);
+  text-decoration: none;
+}
+.article-content a:hover {
+  text-decoration: underline;
+}
+.article-content code:not(.hljs) {
+  background: rgba(239, 68, 68, 0.08);
+  color: #e83a3a;
+  padding: 0.15em 0.35em;
+  border-radius: 3px;
+  font-size: 0.875em;
+  font-family: "JetBrains Mono", "Fira Code", Consolas, ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+  word-break: break-all;
+}
+.dark .article-content code:not(.hljs) {
+  background: rgba(239, 68, 68, 0.15) !important;
+  color: #ff6b6b !important;
+}
+.article-content pre code,
+.article-content pre code.hljs,
+.article-content pre code[class] {
+  background: transparent !important;
+  color: inherit !important;
+  padding: 0 !important;
+  font-size: 0.875em !important;
+  line-height: 1.5 !important;
+  word-break: normal !important;
+  border-radius: 0 !important;
+}
+.dark .article-content pre code,
+.dark .article-content pre code.hljs,
+.dark .article-content pre code[class] {
+  background: transparent !important;
+  color: inherit !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+}
+.article-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin: 0.6em 0;
+}
+.article-content hr {
+  border: none;
+  border-top: 1px solid var(--wechat-border);
+  margin: 1.2em 0;
+}
+.article-content table {
+  border-collapse: collapse;
+  width: 100%;
+  max-width: 100%;
+  margin: 0.8em 0;
+  table-layout: fixed;
+}
+.article-content th,
+.article-content td {
+  border: 1px solid var(--wechat-border);
+  padding: 0.4em 0.6em;
+  text-align: left;
+  vertical-align: top;
+}
+.article-content th {
+  background: var(--wechat-bubble);
+  font-weight: 600;
+}
+.article-content td {
+  min-width: 80px;
+}
+
+.macos-code-wrapper {
+  margin: 1em 0;
+}
+.macos-enhanced-pre {
+  border-radius: 10px;
+  overflow: hidden;
+  background: #f5f5f5;
+  position: relative;
+  box-shadow: none;
+  margin: 1em 0;
+}
+.macos-enhanced-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+  height: 36px;
+  padding: 0 12px 0 16px;
+  background: #f5f5f5;
+  border-bottom: 1px solid #e0e0e0;
+  user-select: none;
+}
+.macos-traffic-lights {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.macos-traffic-light {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: block;
+}
+.macos-traffic-red { background: #fc625d; }
+.macos-traffic-yellow { background: #fdbc40; }
+.macos-traffic-green { background: #35cd4b; }
+.macos-enhanced-header .macos-enhanced-lang {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 14px;
+  font-weight: 700;
+  color: #333;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+.macos-enhanced-copy {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #666;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+.macos-enhanced-copy:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: #333;
+}
+.macos-enhanced-body {
+  position: relative;
+  overflow: hidden;
+  background: #f5f5f5;
+  display: flex;
+}
+.macos-enhanced-code {
+  margin: 0 !important;
+  padding: 5px 5px 2px 5px !important;
+  background: #f5f5f5 !important;
+  border-radius: 0 !important;
+  overflow-x: auto;
+  font-family: "Fira Code", Consolas, ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #999;
+  -webkit-font-smoothing: antialiased;
+}
+.macos-enhanced-code code {
+  background: transparent !important;
+  color: inherit !important;
+  padding: 0 !important;
+  font-size: inherit !important;
+  line-height: inherit !important;
+}
+.macos-line-numbers {
+  flex-shrink: 0;
+  padding: 5px 15px 2px 10px;
+  text-align: right;
+  background: transparent;
+  color: #666;
+  font-family: "Fira Code", Consolas, ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+  font-size: 14px;
+  line-height: 1.5;
+  user-select: none;
+  min-width: 2.5em;
+  white-space: pre;
+}
+.dark .macos-enhanced-pre {
+  background: #1e1e1e;
+}
+.dark .macos-enhanced-header {
+  background: #252526;
+  border-bottom-color: #333333;
+}
+.dark .macos-enhanced-body {
+  background: #1e1e1e;
+}
+.dark .macos-enhanced-header .macos-enhanced-lang {
+  color: #cccccc;
+}
+.dark .macos-enhanced-copy {
+  color: #858585;
+}
+.dark .macos-enhanced-copy:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #cccccc;
+}
+.dark .macos-enhanced-code {
+  background: #1e1e1e !important;
+  color: #d4d4d4 !important;
+}
+.dark .macos-line-numbers {
+  color: #6e6e6e;
+}
+.dark .macos-enhanced-code code,
+.dark .macos-enhanced-code code.hljs {
+  background: transparent !important;
+  color: inherit !important;
+}
+
+.macos-enhanced-code .hljs-keyword,
+.macos-enhanced-code .hljs-selector-tag,
+.macos-enhanced-code .hljs-literal,
+.macos-enhanced-code .hljs-section,
+.macos-enhanced-code .hljs-link,
+.macos-enhanced-code .hljs-function .hljs-keyword {
+  color: #569cd6 !important;
+}
+.macos-enhanced-code .hljs-string,
+.macos-enhanced-code .hljs-attr,
+.macos-enhanced-code .hljs-template-tag,
+.macos-enhanced-code .hljs-template-variable,
+.macos-enhanced-code .hljs-addition {
+  color: #ce9178 !important;
+}
+.macos-enhanced-code .hljs-comment,
+.macos-enhanced-code .hljs-quote {
+  color: #6a9955 !important;
+  font-style: italic;
+}
+.macos-enhanced-code .hljs-number,
+.macos-enhanced-code .hljs-symbol,
+.macos-enhanced-code .hljs-bullet,
+.macos-enhanced-code .hljs-meta,
+.macos-enhanced-code .hljs-deletion {
+  color: #b5cea8 !important;
+}
+.macos-enhanced-code .hljs-title,
+.macos-enhanced-code .hljs-title.function_,
+.macos-enhanced-code .hljs-function .hljs-title {
+  color: #dcdcaa !important;
+}
+.macos-enhanced-code .hljs-title.class_,
+.macos-enhanced-code .hljs-type,
+.macos-enhanced-code .hljs-class .hljs-title {
+  color: #4ec9b0 !important;
+}
+.macos-enhanced-code .hljs-built_in,
+.macos-enhanced-code .hljs-builtin-name,
+.macos-enhanced-code .hljs-params {
+  color: #4fc1ff !important;
+}
+.macos-enhanced-code .hljs-variable,
+.macos-enhanced-code .hljs-name,
+.macos-enhanced-code .hljs-selector-id,
+.macos-enhanced-code .hljs-selector-class {
+  color: #9cdcfe !important;
+}
+.macos-enhanced-code .hljs-tag {
+  color: #569cd6 !important;
+}
+.macos-enhanced-code .hljs-attribute {
+  color: #9cdcfe !important;
+}
+.macos-enhanced-code .hljs-regexp {
+  color: #d16969 !important;
+}
+.macos-enhanced-code .hljs-emphasis {
+  font-style: italic;
+}
+.macos-enhanced-code .hljs-strong {
+  font-weight: 700;
+}
+
 .cover-fallback {
   background:
     radial-gradient(circle at 20% 20%, #8aa4d4 0%, transparent 40%),
