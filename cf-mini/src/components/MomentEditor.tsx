@@ -3,7 +3,9 @@ import { ImagePlus, Trash2, Video } from "lucide-react";
 import type { Post, PostImage, PostVideo } from "@/lib/types";
 import { api, uploadFile } from "@/lib/api";
 import { isHeicFile, isImageFile, isJpegName, isVideoFile } from "@/lib/heic";
+import { fromDatetimeLocalValue, toDatetimeLocalValue } from "@/lib/time";
 import LiveBadge from "./LiveBadge";
+import PublishTimeField from "./PublishTimeField";
 import { getImageSrc, isLivePhoto } from "@/lib/post-image";
 
 export default function MomentEditor({
@@ -18,6 +20,7 @@ export default function MomentEditor({
   const [content, setContent] = useState(post?.content || "");
   const [images, setImages] = useState<PostImage[]>(post?.images || []);
   const [video, setVideo] = useState<PostVideo | null>(post?.video || null);
+  const [createdAt, setCreatedAt] = useState(() => toDatetimeLocalValue(post?.createdAt));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -25,6 +28,7 @@ export default function MomentEditor({
     setContent(post?.content || "");
     setImages(post?.images || []);
     setVideo(post?.video || null);
+    setCreatedAt(toDatetimeLocalValue(post?.createdAt));
   }, [post]);
 
   const addImages = async (files: FileList | null) => {
@@ -116,6 +120,11 @@ export default function MomentEditor({
       setError("写点什么，或加一张图");
       return;
     }
+    const publishedAt = fromDatetimeLocalValue(createdAt);
+    if (createdAt && !publishedAt) {
+      setError("发布时间格式不正确");
+      return;
+    }
     setSaving(true);
     setError("");
     try {
@@ -124,6 +133,7 @@ export default function MomentEditor({
         content: content.trim(),
         images: video ? [] : images,
         video,
+        createdAt: publishedAt || undefined,
       };
       if (post) {
         await api(`/posts/${post.id}`, { method: "PUT", body: JSON.stringify(body) });
@@ -189,6 +199,7 @@ export default function MomentEditor({
       )}
       {error && <p className="text-sm text-adm-danger">{error}</p>}
       <p className="text-xs text-wechat-time">安卓 JPEG 实况会自动拆分；苹果请先把 HEIC 转成 JPG，再同时选中同名的 JPG 和 MOV。</p>
+      <PublishTimeField value={createdAt} onChange={setCreatedAt} />
       <div className="flex justify-end gap-2">
         {onCancel && (
           <button type="button" onClick={onCancel} className="rounded-lg px-4 py-2 text-sm text-adm-text-secondary">

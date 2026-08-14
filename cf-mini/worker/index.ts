@@ -232,9 +232,12 @@ app.post("/api/posts", async (c) => {
     images?: PostImage[];
     video?: PostVideo | null;
     pinned?: boolean;
+    createdAt?: string;
   }>();
   const type = body.type === "article" ? "article" : "moment";
   const now = new Date().toISOString();
+  const createdAt = parseCreatedAt(body.createdAt);
+  if (body.createdAt && !createdAt) return c.json({ message: "发布时间无效" }, 400);
   const id = crypto.randomUUID();
   await c.env.DB.prepare(
     `INSERT INTO posts (id, type, title, excerpt, cover, category, content, images_json, video_json, pinned, created_at, updated_at)
@@ -251,7 +254,7 @@ app.post("/api/posts", async (c) => {
       JSON.stringify(body.images || []),
       body.video ? JSON.stringify(body.video) : null,
       body.pinned ? 1 : 0,
-      now,
+      createdAt || now,
       now
     )
     .run();
@@ -275,10 +278,13 @@ app.put("/api/posts/:id", async (c) => {
     images?: PostImage[];
     video?: PostVideo | null;
     pinned?: boolean;
+    createdAt?: string;
   }>();
+  const createdAt = parseCreatedAt(body.createdAt);
+  if (body.createdAt && !createdAt) return c.json({ message: "发布时间无效" }, 400);
   const content = body.content ?? existing.content;
   await c.env.DB.prepare(
-    `UPDATE posts SET title = ?, excerpt = ?, cover = ?, category = ?, content = ?, images_json = ?, video_json = ?, pinned = ?, updated_at = ?
+    `UPDATE posts SET title = ?, excerpt = ?, cover = ?, category = ?, content = ?, images_json = ?, video_json = ?, pinned = ?, created_at = ?, updated_at = ?
      WHERE id = ?`
   )
     .bind(
@@ -294,6 +300,7 @@ app.put("/api/posts/:id", async (c) => {
           ? JSON.stringify(body.video)
           : null,
       body.pinned === undefined ? existing.pinned : body.pinned ? 1 : 0,
+      createdAt || existing.created_at,
       new Date().toISOString(),
       id
     )
@@ -504,6 +511,15 @@ app.onError((err, c) => {
 
 function excerptFrom(content: string): string {
   return content.replace(/[#>*_`\-\[\]]/g, "").replace(/\s+/g, " ").trim().slice(0, 160);
+}
+
+function parseCreatedAt(raw: unknown): string | null {
+  if (typeof raw !== "string" || !raw.trim()) return null;
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return null;
+  const year = d.getUTCFullYear();
+  if (year < 2000 || year > 2100) return null;
+  return d.toISOString();
 }
 
 async function readFile(c: { req: { parseBody: () => Promise<Record<string, unknown>> } }): Promise<File | null> {

@@ -56,3 +56,23 @@ export function formatArticleTime(iso: string): string {
   const pad = (n: string) => n.padStart(2, "0");
   return `${p.year}年${p.month}月${p.day}日 ${pad(p.hour)}:${pad(p.minute)}`;
 }
+
+function pad2(n: string) {
+  return n.padStart(2, "0");
+}
+
+/** datetime-local 值，按东八区显示 */
+export function toDatetimeLocalValue(iso?: string): string {
+  const p = getCSTParts(iso || new Date().toISOString());
+  let hour = p.hour === "24" ? "00" : pad2(p.hour);
+  return `${p.year}-${pad2(p.month)}-${pad2(p.day)}T${hour}:${pad2(p.minute)}`;
+}
+
+/** 把 datetime-local（东八区）转成 ISO */
+export function fromDatetimeLocalValue(value: string): string | null {
+  const m = value.trim().match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+  if (!m) return null;
+  const d = new Date(`${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:00+08:00`);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toISOString();
+}

@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api, uploadFile } from "@/lib/api";
 import ArticleContent from "@/components/ArticleContent";
+import PublishTimeField from "@/components/PublishTimeField";
+import { fromDatetimeLocalValue, toDatetimeLocalValue } from "@/lib/time";
 import type { Post } from "@/lib/types";
 
 export default function ArticleEditorPage() {
@@ -13,6 +15,7 @@ export default function ArticleEditorPage() {
   const [cover, setCover] = useState("");
   const [category, setCategory] = useState("");
   const [content, setContent] = useState("");
+  const [createdAt, setCreatedAt] = useState(() => toDatetimeLocalValue());
   const [preview, setPreview] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -25,12 +28,18 @@ export default function ArticleEditorPage() {
       setCover(p.cover || "");
       setCategory(p.category || "");
       setContent(p.content || "");
+      setCreatedAt(toDatetimeLocalValue(p.createdAt));
     }).catch((e) => setError(e instanceof Error ? e.message : "加载失败"));
   }, [id, isNew]);
 
   const save = async () => {
     if (!title.trim()) {
       setError("请填写标题");
+      return;
+    }
+    const publishedAt = fromDatetimeLocalValue(createdAt);
+    if (createdAt && !publishedAt) {
+      setError("发布时间格式不正确");
       return;
     }
     setSaving(true);
@@ -47,6 +56,7 @@ export default function ArticleEditorPage() {
           content.replace(/[#>*_`\-\[\]]/g, "").replace(/\s+/g, " ").trim().slice(0, 160),
         images: [],
         video: null,
+        createdAt: publishedAt || undefined,
       };
       if (isNew) {
         const created = await api<Post>("/posts", { method: "POST", body: JSON.stringify(body) });
@@ -127,6 +137,7 @@ export default function ArticleEditorPage() {
           className="w-full rounded-xl border border-adm-border bg-adm-input px-3 py-2 font-mono text-sm outline-none"
         />
       )}
+      <PublishTimeField value={createdAt} onChange={setCreatedAt} />
       {error && <p className="text-sm text-adm-danger">{error}</p>}
       <button
         type="button"
