@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Moon, Sun, ArrowUp } from "lucide-react";
 import { applyTheme, getTheme, toggleTheme } from "@/lib/theme";
 
-export default function FloatingActions() {
+export default function FloatingActions({ liftAboveBottomBar = false }: { liftAboveBottomBar?: boolean }) {
   const [visible, setVisible] = useState(false);
   const [dark, setDark] = useState(false);
   const lastY = useRef(0);
@@ -38,7 +38,11 @@ export default function FloatingActions() {
 
   return (
     <div
-      className={`fixed right-3 z-40 flex flex-col items-center gap-2 md:right-6 bottom-5 transition-[opacity,transform] duration-300 ${
+      className={`fixed right-3 z-40 flex flex-col items-center gap-2 md:right-6 transition-[opacity,transform] duration-300 ${
+        liftAboveBottomBar
+          ? "bottom-[calc(env(safe-area-inset-bottom,0px)+5rem)] md:bottom-5"
+          : "bottom-5"
+      } ${
         visible ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-4 opacity-0"
       }`}
     >

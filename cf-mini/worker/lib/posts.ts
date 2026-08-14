@@ -75,11 +75,12 @@ export function parseVideo(raw: string | null): PostVideo | null {
   }
 }
 
-export function mapComment(row: CommentRow, actorUsername?: string | null) {
+export function mapComment(row: CommentRow, actorUsername?: string | null, env?: Env) {
   const username = row.username.trim();
   return {
     id: row.id,
     author: row.nickname.trim(),
+    avatar: env ? rewriteMediaUrl(env, row.avatar || "") : row.avatar || "",
     email: row.email || undefined,
     replyTo: row.reply_to || undefined,
     replyToId: row.reply_to_id || undefined,
@@ -135,7 +136,7 @@ export function mapPost(
       email: profile.email,
     },
     likes: likes.map((l) => ({ name: l.nickname })),
-    comments: comments.map((comment) => mapComment(comment, actorUsername)),
+    comments: comments.map((comment) => mapComment(comment, actorUsername, env)),
     meLiked: !!actorUsername && likes.some((l) => l.username === actorUsername),
   };
 }

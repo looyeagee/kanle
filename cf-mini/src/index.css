@@ -4,7 +4,9 @@
 
 :root {
   --wechat-bg: #f5f5f5;
+  --wechat-bg-rgb: 245, 245, 245;
   --wechat-white: #ffffff;
+  --wechat-white-rgb: 255, 255, 255;
   --wechat-text: #1a1a1a;
   --wechat-nickname: #576b95;
   --wechat-time: #b2b2b2;
@@ -36,7 +38,9 @@
 
 .dark {
   --wechat-bg: #18181c;
+  --wechat-bg-rgb: 24, 24, 28;
   --wechat-white: #232328;
+  --wechat-white-rgb: 35, 35, 40;
   --wechat-text: #e0e0e0;
   --wechat-nickname: #7d8fc4;
   --wechat-time: #888888;
@@ -131,6 +135,26 @@ body {
 .animate-float { animation: float 6s ease-in-out infinite; }
 .animate-float-delayed { animation: float 7s ease-in-out 1s infinite; }
 .animate-float-slow { animation: float 9s ease-in-out infinite; }
+
+.topbar-surface-white {
+  background-color: rgba(var(--wechat-white-rgb), var(--topbar-bg-alpha, 1)) !important;
+  background-image: none !important;
+}
+
+.comment-editor[data-empty="true"]:before,
+.inline-comment-editor[data-empty="true"]:before {
+  content: attr(data-placeholder);
+  color: var(--wechat-time);
+  pointer-events: none;
+}
+.comment-editor {
+  min-height: 80px;
+  word-break: break-word;
+}
+.inline-comment-editor {
+  min-height: 48px;
+  word-break: break-word;
+}
 
 .rich-content h1 { font-size: 1.4em; font-weight: 600; margin: 0.8em 0 0.4em; }
 .rich-content h2 { font-size: 1.25em; font-weight: 600; margin: 0.8em 0 0.4em; }

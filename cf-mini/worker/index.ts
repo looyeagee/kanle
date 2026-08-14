@@ -404,6 +404,7 @@ app.post("/api/posts/:id/comments", async (c) => {
   return c.json({
     id: commentId,
     author: actor.nickname,
+    avatar: rewriteMediaUrl(c.env, actor.avatar || ""),
     email: actor.email || undefined,
     replyTo: body.replyTo || undefined,
     replyToId: body.replyToId || undefined,

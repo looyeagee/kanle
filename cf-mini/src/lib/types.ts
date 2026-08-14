@@ -19,6 +19,7 @@ export type User = {
 export type Comment = {
   id: string;
   author: string;
+  avatar?: string;
   email?: string;
   replyTo?: string;
   replyToId?: string;

@@ -50,3 +50,9 @@ export function formatArticleDate(iso: string): string {
   if (diffDay < 7) return `${diffDay}天前`;
   return `${d.getMonth() + 1}月${d.getDate()}日`;
 }
+
+export function formatArticleTime(iso: string): string {
+  const p = getCSTParts(iso);
+  const pad = (n: string) => n.padStart(2, "0");
+  return `${p.year}年${p.month}月${p.day}日 ${pad(p.hour)}:${pad(p.minute)}`;
+}
