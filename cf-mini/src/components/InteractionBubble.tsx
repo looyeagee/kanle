@@ -9,35 +9,22 @@ interface InteractionBubbleProps {
   comments: Comment[];
   onReply?: (commentId: string) => void;
   onDeleteComment?: (commentId: string) => void;
+  canDeleteAll?: boolean;
 }
 
-const VISITOR_NAMES = new Set(["访客", "游客"]);
 const MAX_DISPLAY_NAMES = 5;
 const COMMENT_COLLAPSE_THRESHOLD = 5;
 
 function formatLikes(likes: LikeInfo[]): string {
-  const namedUsers = Array.from(
-    new Map(
-      likes
-        .filter((l) => !VISITOR_NAMES.has(l.name))
-        .map((l) => [l.email || l.name, l] as const)
-    ).values()
-  );
-  const displayNames = namedUsers.map((l) => l.name);
-  const visitorCount = likes.filter((l) => VISITOR_NAMES.has(l.name)).length;
-  const total = namedUsers.length + visitorCount;
-  if (total === 0) return "";
-  if (namedUsers.length === 0) {
-    return visitorCount === 1 ? "访客觉得很赞" : `${visitorCount}人觉得很赞`;
-  }
+  const displayNames = Array.from(new Set(likes.map((l) => l.name).filter(Boolean)));
+  if (displayNames.length === 0) return "";
   if (displayNames.length > MAX_DISPLAY_NAMES) {
-    return `${displayNames.slice(0, MAX_DISPLAY_NAMES).join("，")}等 ${total} 人觉得很赞`;
+    return `${displayNames.slice(0, MAX_DISPLAY_NAMES).join("，")}等 ${displayNames.length} 人觉得很赞`;
   }
-  if (visitorCount > 0) return `${displayNames.join("，")}等 ${total} 人觉得很赞`;
   return `${displayNames.join("，")}觉得很赞`;
 }
 
-export default function InteractionBubble({ likes, comments, onReply, onDeleteComment }: InteractionBubbleProps) {
+export default function InteractionBubble({ likes, comments, onReply, onDeleteComment, canDeleteAll }: InteractionBubbleProps) {
   const [expanded, setExpanded] = useState(false);
   if (likes.length === 0 && comments.length === 0) return null;
   const likesText = formatLikes(likes);
@@ -73,7 +60,7 @@ export default function InteractionBubble({ likes, comments, onReply, onDeleteCo
                 )}
                 <span className="text-wechat-text">：{comment.content}</span>
               </button>
-              {onDeleteComment && (
+              {(canDeleteAll || comment.mine) && onDeleteComment && (
                 <button
                   type="button"
                   onClick={() => onDeleteComment(comment.id)}

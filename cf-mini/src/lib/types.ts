@@ -24,6 +24,7 @@ export type Comment = {
   replyToId?: string;
   content: string;
   createdAt: string;
+  mine?: boolean;
 };
 
 export type Post = {

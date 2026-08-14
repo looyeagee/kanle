@@ -28,6 +28,3 @@ export function clearAdmin() {
   localStorage.removeItem(EMAIL_KEY);
 }
 
-export function getVisitorName(): string {
-  return localStorage.getItem("visitor_name") || getAdmin()?.nickname || "访客";
-}

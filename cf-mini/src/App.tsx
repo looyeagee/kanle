@@ -1,4 +1,5 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { useEffect } from "react";
 import HomePage from "@/pages/HomePage";
 import ArticlePage from "@/pages/ArticlePage";
 import LoginPage from "@/pages/admin/LoginPage";
@@ -7,8 +8,12 @@ import MomentsPage from "@/pages/admin/MomentsPage";
 import ArticlesPage from "@/pages/admin/ArticlesPage";
 import ArticleEditorPage from "@/pages/admin/ArticleEditorPage";
 import SettingsPage from "@/pages/admin/SettingsPage";
+import { refreshGithubUser } from "@/lib/github-session";
 
 export default function App() {
+  useEffect(() => {
+    void refreshGithubUser();
+  }, []);
   return (
     <BrowserRouter>
       <Routes>

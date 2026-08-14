@@ -4,6 +4,13 @@ import { getAdmin, setAdmin } from "@/lib/auth";
 import { resolveAvatar } from "@/lib/avatar";
 import type { User } from "@/lib/types";
 
+type AdminMe = {
+  sub: string;
+  email: string;
+  nickname: string;
+  avatar: string;
+};
+
 export default function SettingsPage() {
   const [nickname, setNickname] = useState("");
   const [avatar, setAvatar] = useState("");
@@ -16,6 +23,15 @@ export default function SettingsPage() {
   const [uploadingCover, setUploadingCover] = useState(false);
   const [error, setError] = useState("");
   const [ok, setOk] = useState("");
+
+  const [adminNickname, setAdminNickname] = useState("");
+  const [adminAvatar, setAdminAvatar] = useState("");
+  const [adminEmail, setAdminEmail] = useState("");
+  const [savingAdmin, setSavingAdmin] = useState(false);
+  const [uploadingAdminAvatar, setUploadingAdminAvatar] = useState(false);
+  const [adminError, setAdminError] = useState("");
+  const [adminOk, setAdminOk] = useState("");
+
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -34,11 +50,20 @@ export default function SettingsPage() {
         setEmail(p.email || "");
       })
       .catch((e) => setError(e instanceof Error ? e.message : "加载失败"));
+    api<AdminMe>("/auth/me")
+      .then((me) => {
+        setAdminNickname(me.nickname || "");
+        setAdminAvatar(me.avatar || "");
+        setAdminEmail(me.email || "");
+        const admin = getAdmin();
+        if (admin) setAdmin(admin.token, me.nickname || admin.nickname, me.email || admin.email);
+      })
+      .catch((e) => setAdminError(e instanceof Error ? e.message : "加载管理员资料失败"));
   }, []);
 
   const save = async () => {
     if (!nickname.trim()) {
-      setError("请填写昵称");
+      setError("请填写站点昵称");
       return;
     }
     setSaving(true);
@@ -55,8 +80,6 @@ export default function SettingsPage() {
           siteTitle: siteTitle.trim(),
         }),
       });
-      const admin = getAdmin();
-      if (admin) setAdmin(admin.token, profile.nickname, admin.email);
       setNickname(profile.nickname);
       setAvatar(profile.avatar);
       setCover(profile.cover || "");
@@ -70,17 +93,48 @@ export default function SettingsPage() {
     }
   };
 
+  const saveAdmin = async () => {
+    if (!adminNickname.trim()) {
+      setAdminError("请填写管理员昵称");
+      return;
+    }
+    setSavingAdmin(true);
+    setAdminError("");
+    setAdminOk("");
+    try {
+      const me = await api<AdminMe>("/auth/me", {
+        method: "PUT",
+        body: JSON.stringify({
+          nickname: adminNickname.trim(),
+          avatar: adminAvatar,
+        }),
+      });
+      setAdminNickname(me.nickname);
+      setAdminAvatar(me.avatar || "");
+      setAdminEmail(me.email || "");
+      const admin = getAdmin();
+      if (admin) setAdmin(admin.token, me.nickname, me.email || admin.email);
+      setAdminOk("已保存");
+    } catch (err) {
+      setAdminError(err instanceof Error ? err.message : "保存失败");
+    } finally {
+      setSavingAdmin(false);
+    }
+  };
+
   const preview = resolveAvatar(avatar, email, 200);
+  const adminPreview = resolveAvatar(adminAvatar, adminEmail, 200);
 
   return (
     <div className="space-y-5">
-      <h1 className="text-lg font-semibold">资料设置</h1>
+      <h1 className="text-lg font-semibold">网站资料</h1>
+      <p className="text-xs text-adm-text-secondary">显示在朋友圈首页的封面、头像和昵称，与管理员账号无关。</p>
       <div className="flex items-center gap-4">
         <div className="h-20 w-20 overflow-hidden rounded-xl bg-wechat-bubble">
           <img src={preview} alt="" className="h-full w-full object-cover" />
         </div>
         <label className="cursor-pointer rounded-lg border border-adm-border px-3 py-2 text-sm text-adm-text-secondary">
-          {uploadingAvatar ? "上传中..." : "更换头像"}
+          {uploadingAvatar ? "上传中..." : "更换站点头像"}
           <input
             type="file"
             accept="image/*"
@@ -155,7 +209,7 @@ export default function SettingsPage() {
         </div>
       </div>
       <label className="block text-sm">
-        昵称
+        站点昵称
         <input
           value={nickname}
           onChange={(e) => setNickname(e.target.value)}
@@ -194,8 +248,63 @@ export default function SettingsPage() {
         disabled={saving}
         className="rounded-lg bg-adm-primary px-4 py-2 text-sm text-adm-primary-text disabled:opacity-50"
       >
-        {saving ? "保存中..." : "保存"}
+        {saving ? "保存中..." : "保存网站资料"}
       </button>
+
+      <div className="border-t border-adm-border pt-6">
+        <h2 className="mb-1 text-base font-semibold">管理员资料</h2>
+        <p className="mb-4 text-xs text-adm-text-secondary">
+          评论和点赞时对外显示这里的昵称；username 固定为 admin。
+        </p>
+        <div className="flex items-center gap-4">
+          <div className="h-20 w-20 overflow-hidden rounded-xl bg-wechat-bubble">
+            <img src={adminPreview} alt="" className="h-full w-full object-cover" />
+          </div>
+          <label className="cursor-pointer rounded-lg border border-adm-border px-3 py-2 text-sm text-adm-text-secondary">
+            {uploadingAdminAvatar ? "上传中..." : "更换管理员头像"}
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              disabled={uploadingAdminAvatar}
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                e.target.value = "";
+                if (!file) return;
+                setUploadingAdminAvatar(true);
+                setAdminError("");
+                setAdminOk("");
+                try {
+                  const res = await uploadFile("/upload", file);
+                  if (res.url) setAdminAvatar(res.url);
+                } catch (err) {
+                  setAdminError(err instanceof Error ? err.message : "上传失败");
+                } finally {
+                  setUploadingAdminAvatar(false);
+                }
+              }}
+            />
+          </label>
+        </div>
+        <label className="mt-4 block text-sm">
+          管理员昵称
+          <input
+            value={adminNickname}
+            onChange={(e) => setAdminNickname(e.target.value)}
+            className="mt-1 w-full rounded-xl border border-adm-border bg-adm-input px-3 py-2 outline-none"
+          />
+        </label>
+        {adminError && <p className="mt-3 text-sm text-adm-danger">{adminError}</p>}
+        {adminOk && <p className="mt-3 text-sm text-wechat-nickname">{adminOk}</p>}
+        <button
+          type="button"
+          onClick={saveAdmin}
+          disabled={savingAdmin}
+          className="mt-4 rounded-lg bg-adm-primary px-4 py-2 text-sm text-adm-primary-text disabled:opacity-50"
+        >
+          {savingAdmin ? "保存中..." : "保存管理员资料"}
+        </button>
+      </div>
 
       <div className="border-t border-adm-border pt-6">
         <h2 className="mb-4 text-base font-semibold">修改密码</h2>

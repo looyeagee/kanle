@@ -1,9 +1,16 @@
-import { Hono } from "hono";
-import { getCookie, setCookie } from "hono/cookie";
+import { Hono, type Context } from "hono";
 import { sign, verify } from "hono/jwt";
 import { ensureDefaultAdmin, type AdminJwt } from "./lib/auth";
 import { hashPassword, verifyPassword } from "./lib/crypto";
-import { buildObjectKey, extFromName, MEDIA_CACHE_CONTROL, publicMediaUrl } from "./lib/media";
+import {
+  beginGithubLogin,
+  clearGithubSession,
+  finishGithubLogin,
+  getActor,
+  getGithubUserFromRequest,
+  githubConfigured,
+} from "./lib/github";
+import { buildObjectKey, extFromName, MEDIA_CACHE_CONTROL, publicMediaUrl, rewriteMediaUrl } from "./lib/media";
 import { extractMotionPhoto } from "./lib/motion-photo";
 import {
   getProfile,
@@ -16,10 +23,6 @@ import { serveSpa } from "./lib/ssr";
 
 type AppEnv = {
   Bindings: Env;
-  Variables: {
-    visitorId: string;
-    admin?: AdminJwt;
-  };
 };
 
 const app = new Hono<AppEnv>();
@@ -32,17 +35,6 @@ const VIDEO_MAX = 50 * 1024 * 1024;
 
 app.use("/api/*", async (c, next) => {
   await ensureDefaultAdmin(c.env);
-  let visitorId = getCookie(c, "visitor_id");
-  if (!visitorId) {
-    visitorId = crypto.randomUUID();
-    setCookie(c, "visitor_id", visitorId, {
-      httpOnly: true,
-      path: "/",
-      maxAge: 60 * 60 * 24 * 365,
-      sameSite: "Lax",
-    });
-  }
-  c.set("visitorId", visitorId);
   await next();
 });
 
@@ -51,13 +43,40 @@ async function getAdminFromRequest(c: { req: { header: (n: string) => string | u
   const token = header.startsWith("Bearer ") ? header.slice(7) : "";
   if (!token || !c.env.JWT_SECRET) return null;
   try {
-    const payload = (await verify(token, c.env.JWT_SECRET, "HS256")) as AdminJwt & { exp?: number };
-    if (!payload.sub || !payload.email) return null;
+    const payload = (await verify(token, c.env.JWT_SECRET, "HS256")) as AdminJwt & { exp?: number; kind?: string };
+    if (payload.kind === "github" || !payload.sub || !payload.email) return null;
     return { sub: payload.sub, email: payload.email, nickname: payload.nickname || "" };
   } catch {
     return null;
   }
 }
+
+async function postsFor(c: Context, rows: PostRow[]) {
+  const actor = await getActor(c, await getAdminFromRequest(c));
+  return loadPostBundle(c.env.DB, rows, c.env, actor?.username);
+}
+
+app.get("/api/auth/github", (c) => beginGithubLogin(c));
+app.get("/api/auth/github/callback", (c) => finishGithubLogin(c));
+app.get("/api/auth/github/me", async (c) => {
+  if (!githubConfigured(c.env)) return c.json({ user: null, configured: false });
+  const user = await getGithubUserFromRequest(c);
+  if (!user) return c.json({ user: null, configured: true });
+  return c.json({
+    configured: true,
+    user: {
+      id: user.sub,
+      login: user.login,
+      nickname: user.nickname,
+      avatar: user.avatar,
+      email: user.email,
+    },
+  });
+});
+app.post("/api/auth/github/logout", (c) => {
+  clearGithubSession(c);
+  return c.json({ ok: true });
+});
 
 app.get("/api/profile", async (c) => {
   const profile = await getProfile(c.env.DB, c.env);
@@ -80,12 +99,11 @@ app.put("/api/profile", async (c) => {
   const cover = body.cover ?? current.cover;
   const bio = body.bio ?? current.bio;
   const siteTitle = (body.siteTitle ?? current.siteTitle).trim() || nickname;
-  await c.env.DB.batch([
-    c.env.DB.prepare(
-      "UPDATE site_profile SET nickname = ?, avatar = ?, cover = ?, bio = ?, site_title = ? WHERE id = 'default'"
-    ).bind(nickname, avatar, cover, bio, siteTitle),
-    c.env.DB.prepare("UPDATE admins SET nickname = ? WHERE id = ?").bind(nickname, admin.sub),
-  ]);
+  await c.env.DB.prepare(
+    "UPDATE site_profile SET nickname = ?, avatar = ?, cover = ?, bio = ?, site_title = ? WHERE id = 'default'"
+  )
+    .bind(nickname, avatar, cover, bio, siteTitle)
+    .run();
   return c.json(await getProfile(c.env.DB, c.env));
 });
 
@@ -122,7 +140,36 @@ app.post("/api/auth/login", async (c) => {
 app.get("/api/auth/me", async (c) => {
   const admin = await getAdminFromRequest(c);
   if (!admin) return c.json({ message: "未登录" }, 401);
-  return c.json(admin);
+  const row = await c.env.DB.prepare("SELECT nickname, email, avatar FROM admins WHERE id = ?")
+    .bind(admin.sub)
+    .first<{ nickname: string; email: string; avatar: string }>();
+  return c.json({
+    sub: admin.sub,
+    email: row?.email || admin.email,
+    nickname: row?.nickname || admin.nickname,
+    avatar: rewriteMediaUrl(c.env, row?.avatar || ""),
+  });
+});
+
+app.put("/api/auth/me", async (c) => {
+  const admin = await getAdminFromRequest(c);
+  if (!admin) return c.json({ message: "未登录" }, 401);
+  const current = await c.env.DB.prepare("SELECT nickname, email, avatar FROM admins WHERE id = ?")
+    .bind(admin.sub)
+    .first<{ nickname: string; email: string; avatar: string }>();
+  if (!current) return c.json({ message: "未找到管理员" }, 404);
+  const body = await c.req.json<{ nickname?: string; avatar?: string }>();
+  const nickname = (body.nickname ?? current.nickname).trim() || current.nickname;
+  const avatar = body.avatar ?? current.avatar;
+  await c.env.DB.prepare("UPDATE admins SET nickname = ?, avatar = ? WHERE id = ?")
+    .bind(nickname, avatar, admin.sub)
+    .run();
+  return c.json({
+    sub: admin.sub,
+    email: current.email,
+    nickname,
+    avatar: rewriteMediaUrl(c.env, avatar || ""),
+  });
 });
 
 app.post("/api/auth/password", async (c) => {
@@ -149,8 +196,6 @@ app.get("/api/posts", async (c) => {
   const limit = Math.min(50, Math.max(1, Number(c.req.query("limit") || 10)));
   const type = c.req.query("type");
   const offset = (page - 1) * limit;
-  const visitorId = c.get("visitorId");
-
   const stmt =
     type === "moment" || type === "article"
       ? c.env.DB.prepare(
@@ -163,7 +208,7 @@ app.get("/api/posts", async (c) => {
   const list = rows.results || [];
   const hasMore = list.length > limit;
   const pageRows = hasMore ? list.slice(0, limit) : list;
-  const bundle = await loadPostBundle(c.env.DB, pageRows, visitorId, c.env);
+  const bundle = await postsFor(c, pageRows);
   return c.json({
     data: bundle.items,
     pagination: { page, limit, hasMore },
@@ -176,7 +221,7 @@ app.get("/api/posts/:id", async (c) => {
     .bind(id)
     .first<PostRow>();
   if (!row) return c.json({ message: "未找到" }, 404);
-  const bundle = await loadPostBundle(c.env.DB, [row], c.get("visitorId"), c.env);
+  const bundle = await postsFor(c, [row]);
   return c.json(bundle.items[0]);
 });
 
@@ -217,7 +262,7 @@ app.post("/api/posts", async (c) => {
     )
     .run();
   const row = await c.env.DB.prepare("SELECT * FROM posts WHERE id = ?").bind(id).first<PostRow>();
-  const bundle = await loadPostBundle(c.env.DB, row ? [row] : [], c.get("visitorId"), c.env);
+  const bundle = await postsFor(c, row ? [row] : []);
   return c.json(bundle.items[0], 201);
 });
 
@@ -260,7 +305,7 @@ app.put("/api/posts/:id", async (c) => {
     )
     .run();
   const row = await c.env.DB.prepare("SELECT * FROM posts WHERE id = ?").bind(id).first<PostRow>();
-  const bundle = await loadPostBundle(c.env.DB, row ? [row] : [], c.get("visitorId"), c.env);
+  const bundle = await postsFor(c, row ? [row] : []);
   return c.json(bundle.items[0]);
 });
 
@@ -289,63 +334,73 @@ app.patch("/api/posts/:id/pin", async (c) => {
 });
 
 app.post("/api/posts/:id/likes", async (c) => {
+  const actor = await getActor(c, await getAdminFromRequest(c));
+  if (!actor) return c.json({ message: "请先登录 GitHub" }, 401);
   const id = c.req.param("id");
-  const visitorId = c.get("visitorId");
   const post = await c.env.DB.prepare("SELECT id FROM posts WHERE id = ?").bind(id).first();
   if (!post) return c.json({ message: "未找到" }, 404);
-  const body = await c.req.json<{ name?: string }>().catch(() => ({ name: "访客" }));
-  const name = (body.name || "访客").trim() || "访客";
   const existing = await c.env.DB.prepare(
-    "SELECT id FROM likes WHERE post_id = ? AND visitor_id = ?"
+    "SELECT id FROM likes WHERE post_id = ? AND username = ?"
   )
-    .bind(id, visitorId)
+    .bind(id, actor.username)
     .first();
   if (existing) {
-    await c.env.DB.prepare("DELETE FROM likes WHERE post_id = ? AND visitor_id = ?")
-      .bind(id, visitorId)
+    await c.env.DB.prepare("DELETE FROM likes WHERE post_id = ? AND username = ?")
+      .bind(id, actor.username)
       .run();
   } else {
     await c.env.DB.prepare(
-      "INSERT INTO likes (id, post_id, name, visitor_id, created_at) VALUES (?, ?, ?, ?, ?)"
+      `INSERT INTO likes (id, post_id, username, nickname, avatar, email, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`
     )
-      .bind(crypto.randomUUID(), id, name, visitorId, new Date().toISOString())
+      .bind(
+        crypto.randomUUID(),
+        id,
+        actor.username,
+        actor.nickname,
+        actor.avatar,
+        actor.email,
+        new Date().toISOString()
+      )
       .run();
   }
-  const likes = await c.env.DB.prepare("SELECT name FROM likes WHERE post_id = ? ORDER BY created_at ASC")
+  const likes = await c.env.DB.prepare(
+    "SELECT nickname FROM likes WHERE post_id = ? ORDER BY created_at ASC"
+  )
     .bind(id)
-    .all<{ name: string }>();
+    .all<{ nickname: string }>();
   return c.json({
     liked: !existing,
-    likes: (likes.results || []).map((l) => ({ name: l.name })),
+    likes: (likes.results || []).map((l) => ({ name: l.nickname })),
   });
 });
 
 app.post("/api/posts/:id/comments", async (c) => {
+  const actor = await getActor(c, await getAdminFromRequest(c));
+  if (!actor) return c.json({ message: "请先登录 GitHub" }, 401);
   const id = c.req.param("id");
   const post = await c.env.DB.prepare("SELECT id FROM posts WHERE id = ?").bind(id).first();
   if (!post) return c.json({ message: "未找到" }, 404);
   const body = await c.req.json<{
-    authorName?: string;
-    email?: string;
     content?: string;
     replyTo?: string;
     replyToId?: string;
   }>();
-  const authorName = (body.authorName || "").trim();
   const content = (body.content || "").trim();
-  if (!authorName) return c.json({ message: "请填写昵称" }, 400);
   if (!content) return c.json({ message: "请填写评论" }, 400);
   const commentId = crypto.randomUUID();
   const createdAt = new Date().toISOString();
   await c.env.DB.prepare(
-    `INSERT INTO comments (id, post_id, author_name, email, reply_to, reply_to_id, content, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO comments (id, post_id, username, nickname, avatar, email, reply_to, reply_to_id, content, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   )
     .bind(
       commentId,
       id,
-      authorName,
-      (body.email || "").trim(),
+      actor.username,
+      actor.nickname,
+      actor.avatar,
+      actor.email,
       body.replyTo || null,
       body.replyToId || null,
       content,
@@ -354,24 +409,35 @@ app.post("/api/posts/:id/comments", async (c) => {
     .run();
   return c.json({
     id: commentId,
-    author: authorName,
-    email: body.email || undefined,
+    author: actor.nickname,
+    email: actor.email || undefined,
     replyTo: body.replyTo || undefined,
     replyToId: body.replyToId || undefined,
     content,
     createdAt,
+    mine: true,
   });
 });
 
 app.delete("/api/posts/:id/comments/:commentId", async (c) => {
   const admin = await getAdminFromRequest(c);
-  if (!admin) return c.json({ message: "未登录" }, 401);
+  const actor = await getActor(c, admin);
+  if (!actor) return c.json({ message: "请先登录 GitHub" }, 401);
   const postId = c.req.param("id");
   const commentId = c.req.param("commentId");
-  const res = await c.env.DB.prepare("DELETE FROM comments WHERE id = ? AND post_id = ?")
+  const comment = await c.env.DB.prepare("SELECT id, username FROM comments WHERE id = ? AND post_id = ?")
+    .bind(commentId, postId)
+    .first<{ id: string; username: string }>();
+  if (!comment) return c.json({ message: "未找到" }, 404);
+  if (!admin) {
+    const username = (comment.username || "").trim();
+    if (!username || username !== actor.username) {
+      return c.json({ message: "只能删除自己的评论" }, 403);
+    }
+  }
+  await c.env.DB.prepare("DELETE FROM comments WHERE id = ? AND post_id = ?")
     .bind(commentId, postId)
     .run();
-  if (!res.meta.changes) return c.json({ message: "未找到" }, 404);
   return c.json({ ok: true });
 });
 

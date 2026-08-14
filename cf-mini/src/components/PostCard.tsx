@@ -3,7 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { FileText, Pin } from "lucide-react";
 import type { Comment, Post } from "@/lib/types";
 import { api } from "@/lib/api";
-import { getAdmin, getVisitorName } from "@/lib/auth";
+import { getAdmin } from "@/lib/auth";
+import { startGithubLogin, useGithubUser } from "@/lib/github-session";
 import { renderPlain } from "@/lib/markdown";
 import { resolveAvatar } from "@/lib/avatar";
 import { formatRelativeTime } from "@/lib/time";
@@ -37,6 +38,7 @@ export default function PostCard({
   const [expanded, setExpanded] = useState(false);
   const articleRef = useRef<HTMLElement>(null);
   const isAdmin = !!getAdmin();
+  const { signedIn } = useGithubUser();
 
   useEffect(() => {
     setLiked(!!post.meLiked);
@@ -64,6 +66,10 @@ export default function PostCard({
   }, [showComments]);
 
   const handleLike = async () => {
+    if (!signedIn) {
+      startGithubLogin();
+      return;
+    }
     if (liking) return;
     setLiking(true);
     const prev = liked;
@@ -71,7 +77,6 @@ export default function PostCard({
     try {
       const data = await api<{ liked: boolean; likes: Array<{ name: string }> }>(`/posts/${post.id}/likes`, {
         method: "POST",
-        body: JSON.stringify({ name: getVisitorName() }),
       });
       setLiked(data.liked);
       setLikes(data.likes);
@@ -165,7 +170,13 @@ export default function PostCard({
           <time className="text-[13px] text-wechat-time md:text-[14px]">{formatRelativeTime(post.createdAt)}</time>
           <ActionMenu
             onLike={handleLike}
-            onComment={() => setShowComments((v) => !v)}
+            onComment={() => {
+              if (!signedIn) {
+                startGithubLogin();
+                return;
+              }
+              setShowComments((v) => !v);
+            }}
             onEdit={isAdmin && !isArticle ? onEdit : isAdmin && isArticle ? () => navigate(`/admin/articles/${post.id}`) : undefined}
             onDelete={onDelete}
             onPin={isAdmin ? handlePin : undefined}
@@ -182,7 +193,7 @@ export default function PostCard({
             setShowComments(true);
           }}
           onDeleteComment={
-            isAdmin
+            signedIn
               ? async (commentId) => {
                   if (!confirm("删除这条评论？")) return;
                   await api(`/posts/${post.id}/comments/${commentId}`, { method: "DELETE" });
@@ -190,6 +201,7 @@ export default function PostCard({
                 }
               : undefined
           }
+          canDeleteAll={isAdmin}
         />
         {showComments && (
           <CommentSection

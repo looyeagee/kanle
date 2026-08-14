@@ -35,7 +35,9 @@ export type PostRow = {
 export type CommentRow = {
   id: string;
   post_id: string;
-  author_name: string;
+  username: string;
+  nickname: string;
+  avatar: string;
   email: string;
   reply_to: string | null;
   reply_to_id: string | null;
@@ -46,8 +48,10 @@ export type CommentRow = {
 export type LikeRow = {
   id: string;
   post_id: string;
-  name: string;
-  visitor_id: string;
+  username: string;
+  nickname: string;
+  avatar: string;
+  email: string;
   created_at: string;
 };
 
@@ -71,15 +75,17 @@ export function parseVideo(raw: string | null): PostVideo | null {
   }
 }
 
-export function mapComment(row: CommentRow) {
+export function mapComment(row: CommentRow, actorUsername?: string | null) {
+  const username = row.username.trim();
   return {
     id: row.id,
-    author: row.author_name,
+    author: row.nickname.trim(),
     email: row.email || undefined,
     replyTo: row.reply_to || undefined,
     replyToId: row.reply_to_id || undefined,
     content: row.content,
     createdAt: toIso(row.created_at),
+    mine: !!actorUsername && !!username && username === actorUsername,
   };
 }
 
@@ -105,8 +111,8 @@ export function mapPost(
   profile: Profile,
   likes: LikeRow[],
   comments: CommentRow[],
-  visitorId: string,
-  env: Env
+  env: Env,
+  actorUsername?: string | null
 ) {
   return {
     id: row.id,
@@ -128,9 +134,9 @@ export function mapPost(
       bio: profile.bio,
       email: profile.email,
     },
-    likes: likes.map((l) => ({ name: l.name })),
-    comments: comments.map(mapComment),
-    meLiked: likes.some((l) => l.visitor_id === visitorId),
+    likes: likes.map((l) => ({ name: l.nickname })),
+    comments: comments.map((comment) => mapComment(comment, actorUsername)),
+    meLiked: !!actorUsername && likes.some((l) => l.username === actorUsername),
   };
 }
 
@@ -165,8 +171,8 @@ function toIso(value: string): string {
 export async function loadPostBundle(
   db: D1Database,
   posts: PostRow[],
-  visitorId: string,
-  env: Env
+  env: Env,
+  actorUsername?: string | null
 ) {
   const profile = await getProfile(db, env);
   if (posts.length === 0) {
@@ -199,7 +205,7 @@ export async function loadPostBundle(
   return {
     profile,
     items: posts.map((row) =>
-      mapPost(row, profile, likesByPost.get(row.id) || [], commentsByPost.get(row.id) || [], visitorId, env)
+      mapPost(row, profile, likesByPost.get(row.id) || [], commentsByPost.get(row.id) || [], env, actorUsername)
     ),
   };
 }

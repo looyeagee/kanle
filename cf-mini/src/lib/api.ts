@@ -20,7 +20,7 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
     headers,
     credentials: "include",
   });
-  if (res.status === 401) {
+  if (res.status === 401 && token) {
     clearAdmin();
   }
   if (!res.ok) {

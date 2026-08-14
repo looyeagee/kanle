@@ -1,0 +1,13 @@
+ALTER TABLE admins ADD COLUMN avatar TEXT NOT NULL DEFAULT '';
+
+ALTER TABLE comments ADD COLUMN username TEXT NOT NULL DEFAULT '';
+ALTER TABLE comments ADD COLUMN nickname TEXT NOT NULL DEFAULT '';
+ALTER TABLE comments ADD COLUMN avatar TEXT NOT NULL DEFAULT '';
+
+ALTER TABLE likes ADD COLUMN username TEXT NOT NULL DEFAULT '';
+ALTER TABLE likes ADD COLUMN nickname TEXT NOT NULL DEFAULT '';
+ALTER TABLE likes ADD COLUMN avatar TEXT NOT NULL DEFAULT '';
+ALTER TABLE likes ADD COLUMN email TEXT NOT NULL DEFAULT '';
+
+UPDATE comments SET nickname = author_name WHERE nickname = '';
+UPDATE likes SET nickname = name WHERE nickname = '';

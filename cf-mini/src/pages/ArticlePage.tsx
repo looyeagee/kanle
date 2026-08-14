@@ -8,7 +8,8 @@ import InteractionBubble from "@/components/InteractionBubble";
 import CommentSection from "@/components/CommentSection";
 import ActionMenu from "@/components/ActionMenu";
 import { api } from "@/lib/api";
-import { getAdmin, getVisitorName } from "@/lib/auth";
+import { getAdmin } from "@/lib/auth";
+import { startGithubLogin, useGithubUser } from "@/lib/github-session";
 import { renderMarkdown } from "@/lib/markdown";
 import { formatRelativeTime } from "@/lib/time";
 import { readBootstrapProfile } from "@/lib/bootstrap";
@@ -25,6 +26,7 @@ export default function ArticlePage() {
   const [showComments, setShowComments] = useState(true);
   const [replyTo, setReplyTo] = useState<string | undefined>();
   const [siteTitle, setSiteTitle] = useState(siteTitleOf(readBootstrapProfile()));
+  const { signedIn } = useGithubUser();
 
   useEffect(() => {
     api<User>("/profile")
@@ -86,14 +88,23 @@ export default function ArticlePage() {
                 </span>
                 <ActionMenu
                   onLike={async () => {
+                    if (!signedIn) {
+                      startGithubLogin();
+                      return;
+                    }
                     const data = await api<{ liked: boolean; likes: Array<{ name: string }> }>(`/posts/${post.id}/likes`, {
                       method: "POST",
-                      body: JSON.stringify({ name: getVisitorName() }),
                     });
                     setLiked(data.liked);
                     setLikes(data.likes);
                   }}
-                  onComment={() => setShowComments(true)}
+                  onComment={() => {
+                    if (!signedIn) {
+                      startGithubLogin();
+                      return;
+                    }
+                    setShowComments(true);
+                  }}
                   liked={liked}
                 />
               </div>
@@ -110,7 +121,7 @@ export default function ArticlePage() {
                     setShowComments(true);
                   }}
                   onDeleteComment={
-                    getAdmin()
+                    signedIn
                       ? async (commentId) => {
                           if (!id || !confirm("删除这条评论？")) return;
                           await api(`/posts/${id}/comments/${commentId}`, { method: "DELETE" });
@@ -118,6 +129,7 @@ export default function ArticlePage() {
                         }
                       : undefined
                   }
+                  canDeleteAll={!!getAdmin()}
                 />
                 {showComments && (
                   <CommentSection

@@ -7,4 +7,6 @@ interface Env {
   JWT_SECRET: string;
   R2_PUBLIC_BASE: string;
   ADMIN_BOOTSTRAP_PASSWORD?: string;
+  GITHUB_CLIENT_ID?: string;
+  GITHUB_CLIENT_SECRET?: string;
 }
