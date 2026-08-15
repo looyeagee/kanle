@@ -28,6 +28,7 @@ export type PostRow = {
   images_json: string;
   video_json: string | null;
   pinned: number;
+  location?: string;
   created_at: string;
   updated_at: string;
 };
@@ -126,6 +127,7 @@ export function mapPost(
     images: parseImages(row.images_json).map((image) => rewriteImage(env, image)),
     video: rewriteVideo(env, parseVideo(row.video_json)),
     pinned: row.pinned === 1,
+    location: (row.location || "").trim() || undefined,
     createdAt: toIso(row.created_at),
     author: {
       id: "owner",

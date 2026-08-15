@@ -166,6 +166,12 @@ export default function PostCard({
           </Link>
         )}
 
+        {!isArticle && post.location && (
+          <div className="mt-2">
+            <span className="text-[13px] text-wechat-link md:text-[14px]">{post.location}</span>
+          </div>
+        )}
+
         <div className="mt-2 flex items-center justify-between">
           <time className="text-[13px] text-wechat-time md:text-[14px]">{formatRelativeTime(post.createdAt)}</time>
           <ActionMenu

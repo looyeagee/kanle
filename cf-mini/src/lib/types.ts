@@ -39,6 +39,7 @@ export type Post = {
   images: PostImage[];
   video?: PostVideo | null;
   pinned?: boolean;
+  location?: string;
   createdAt: string;
   author: User;
   likes: Array<{ name: string; email?: string }>;

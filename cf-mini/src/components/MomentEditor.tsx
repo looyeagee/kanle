@@ -21,6 +21,7 @@ export default function MomentEditor({
   const [images, setImages] = useState<PostImage[]>(post?.images || []);
   const [video, setVideo] = useState<PostVideo | null>(post?.video || null);
   const [createdAt, setCreatedAt] = useState(() => toDatetimeLocalValue(post?.createdAt));
+  const [location, setLocation] = useState(post?.location || "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -29,6 +30,7 @@ export default function MomentEditor({
     setImages(post?.images || []);
     setVideo(post?.video || null);
     setCreatedAt(toDatetimeLocalValue(post?.createdAt));
+    setLocation(post?.location || "");
   }, [post]);
 
   const addImages = async (files: FileList | null) => {
@@ -134,6 +136,7 @@ export default function MomentEditor({
         images: video ? [] : images,
         video,
         createdAt: publishedAt || undefined,
+        location: location.trim(),
       };
       if (post) {
         await api(`/posts/${post.id}`, { method: "PUT", body: JSON.stringify(body) });
@@ -199,6 +202,14 @@ export default function MomentEditor({
       )}
       {error && <p className="text-sm text-adm-danger">{error}</p>}
       <p className="text-xs text-wechat-time">安卓 JPEG 实况会自动拆分；苹果请先把 HEIC 转成 JPG，再同时选中同名的 JPG 和 MOV。</p>
+      <label className="block">
+        <span className="mb-1.5 block text-sm text-adm-text-secondary">地理位置</span>
+        <input
+          value={location}
+          onChange={(e) => setLocation(e.target.value.slice(0, 80))}
+          className="w-full rounded-xl border border-adm-border bg-adm-input px-3 py-2 text-sm outline-none"
+        />
+      </label>
       <PublishTimeField value={createdAt} onChange={setCreatedAt} />
       <div className="flex justify-end gap-2">
         {onCancel && (

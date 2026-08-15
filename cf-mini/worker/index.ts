@@ -233,6 +233,7 @@ app.post("/api/posts", async (c) => {
     video?: PostVideo | null;
     pinned?: boolean;
     createdAt?: string;
+    location?: string;
   }>();
   const type = body.type === "article" ? "article" : "moment";
   const now = new Date().toISOString();
@@ -240,8 +241,8 @@ app.post("/api/posts", async (c) => {
   if (body.createdAt && !createdAt) return c.json({ message: "发布时间无效" }, 400);
   const id = crypto.randomUUID();
   await c.env.DB.prepare(
-    `INSERT INTO posts (id, type, title, excerpt, cover, category, content, images_json, video_json, pinned, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO posts (id, type, title, excerpt, cover, category, content, images_json, video_json, pinned, location, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   )
     .bind(
       id,
@@ -254,6 +255,7 @@ app.post("/api/posts", async (c) => {
       JSON.stringify(body.images || []),
       body.video ? JSON.stringify(body.video) : null,
       body.pinned ? 1 : 0,
+      sanitizeLocation(body.location),
       createdAt || now,
       now
     )
@@ -279,12 +281,13 @@ app.put("/api/posts/:id", async (c) => {
     video?: PostVideo | null;
     pinned?: boolean;
     createdAt?: string;
+    location?: string;
   }>();
   const createdAt = parseCreatedAt(body.createdAt);
   if (body.createdAt && !createdAt) return c.json({ message: "发布时间无效" }, 400);
   const content = body.content ?? existing.content;
   await c.env.DB.prepare(
-    `UPDATE posts SET title = ?, excerpt = ?, cover = ?, category = ?, content = ?, images_json = ?, video_json = ?, pinned = ?, created_at = ?, updated_at = ?
+    `UPDATE posts SET title = ?, excerpt = ?, cover = ?, category = ?, content = ?, images_json = ?, video_json = ?, pinned = ?, location = ?, created_at = ?, updated_at = ?
      WHERE id = ?`
   )
     .bind(
@@ -300,6 +303,7 @@ app.put("/api/posts/:id", async (c) => {
           ? JSON.stringify(body.video)
           : null,
       body.pinned === undefined ? existing.pinned : body.pinned ? 1 : 0,
+      body.location === undefined ? existing.location || "" : sanitizeLocation(body.location),
       createdAt || existing.created_at,
       new Date().toISOString(),
       id
@@ -520,6 +524,11 @@ function parseCreatedAt(raw: unknown): string | null {
   const year = d.getUTCFullYear();
   if (year < 2000 || year > 2100) return null;
   return d.toISOString();
+}
+
+function sanitizeLocation(raw: unknown): string {
+  if (typeof raw !== "string") return "";
+  return raw.replace(/\s+/g, " ").trim().slice(0, 80);
 }
 
 async function readFile(c: { req: { parseBody: () => Promise<Record<string, unknown>> } }): Promise<File | null> {
