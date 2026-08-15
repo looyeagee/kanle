@@ -22,6 +22,20 @@ function isHomePath(pathname: string): boolean {
   return pathname === "/" || pathname === "";
 }
 
+function isKnownAppPath(pathname: string): boolean {
+  const path = pathname.replace(/\/+$/, "") || "/";
+  if (path === "/") return true;
+  if (/^\/articles\/[^/]+$/.test(path)) return true;
+  if (path === "/admin/login") return true;
+  if (path === "/admin") return true;
+  if (path === "/admin/moments") return true;
+  if (path === "/admin/articles") return true;
+  if (path === "/admin/articles/new") return true;
+  if (/^\/admin\/articles\/[^/]+$/.test(path)) return true;
+  if (path === "/admin/settings") return true;
+  return false;
+}
+
 async function articleTitle(env: Env, pathname: string): Promise<string> {
   const id = pathname.match(/^\/articles\/([^/]+)\/?$/)?.[1];
   if (!id) return "";
@@ -89,7 +103,9 @@ export async function serveSpa(request: Request, env: Env): Promise<Response> {
 
   const profile = boot.profile || fallbackProfile;
   const siteTitle = siteTitleOf(profile);
-  const title = postTitle ? `${postTitle} - ${siteTitle}` : siteTitle;
+  const articleMissing = /^\/articles\/[^/]+\/?$/.test(url.pathname) && !postTitle;
+  const notFound = !isKnownAppPath(url.pathname) || articleMissing;
+  const title = postTitle ? `${postTitle} - ${siteTitle}` : notFound ? `页面不存在 - ${siteTitle}` : siteTitle;
   const payload = jsonForScript({
     ...profilePayload(profile),
     ...(Array.isArray(boot.posts)

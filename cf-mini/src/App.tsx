@@ -2,6 +2,7 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { useEffect } from "react";
 import HomePage from "@/pages/HomePage";
 import ArticlePage from "@/pages/ArticlePage";
+import NotFoundPage from "@/pages/NotFoundPage";
 import LoginPage from "@/pages/admin/LoginPage";
 import AdminLayout from "@/pages/admin/AdminLayout";
 import MomentsPage from "@/pages/admin/MomentsPage";
@@ -27,7 +28,9 @@ export default function App() {
           <Route path="articles/new" element={<ArticleEditorPage />} />
           <Route path="articles/:id" element={<ArticleEditorPage />} />
           <Route path="settings" element={<SettingsPage />} />
+          <Route path="*" element={<NotFoundPage compact />} />
         </Route>
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </BrowserRouter>
   );

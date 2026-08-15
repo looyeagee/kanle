@@ -13,6 +13,7 @@ import { formatArticleTime } from "@/lib/time";
 import { readBootstrapProfile } from "@/lib/bootstrap";
 import { setDocumentTitle, siteTitleOf } from "@/lib/title";
 import { resolveAvatar } from "@/lib/avatar";
+import NotFoundPage from "@/pages/NotFoundPage";
 import type { Comment, Post, User } from "@/lib/types";
 
 export default function ArticlePage() {
@@ -89,6 +90,9 @@ export default function ArticlePage() {
   };
 
   if (error) {
+    if (error === "未找到") {
+      return <NotFoundPage description="这篇文章不存在或已删除" />;
+    }
     return <div className="p-10 text-center text-wechat-time">{error}</div>;
   }
   if (!post) {
